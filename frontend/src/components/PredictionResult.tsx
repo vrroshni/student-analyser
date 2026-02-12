@@ -22,8 +22,8 @@ function badgeVariantFor(prediction: string): "success" | "warning" | "danger" {
   return "danger";
 }
 
-function buildExplanation(result: PredictionOutput): string {
-  const sorted = [...result.feature_contributions].sort(
+function buildExplanation(result: PredictionOutput, contributions: PredictionOutput["feature_contributions"]): string {
+  const sorted = [...contributions].sort(
     (a, b) => Math.abs(b.contribution) - Math.abs(a.contribution)
   );
   const top = sorted.slice(0, 2);
@@ -89,9 +89,18 @@ export function PredictionResult({
 
   const dotClass = dotClassFor(result.prediction);
 
+  const providedSemesters = new Set((result.semesters ?? []).map((s) => s.semester));
+  const filteredContributions = (result.feature_contributions ?? []).filter((c) => {
+    if (c.feature === "age") return true;
+    const m = /^sem(\d+)_(internal|university|attendance)$/.exec(c.feature);
+    if (!m) return true;
+    const sem = Number(m[1]);
+    return providedSemesters.has(sem);
+  });
+
   const maxAbs = Math.max(
     1e-9,
-    ...result.feature_contributions.map((c) => Math.abs(c.contribution))
+    ...filteredContributions.map((c) => Math.abs(c.contribution))
   );
 
   const chartData = (result.semesters ?? []).map((s) => {
@@ -133,7 +142,7 @@ export function PredictionResult({
         </div>
 
         <div className="rounded-lg border border-border/70 bg-background/40 px-4 py-3 text-sm text-muted-foreground">
-          {buildExplanation(result)}
+          {buildExplanation(result, filteredContributions)}
         </div>
 
         <div>
@@ -220,7 +229,7 @@ export function PredictionResult({
         <div>
           <div className="text-sm font-semibold">Feature contributions</div>
           <div className="mt-3 space-y-3">
-            {result.feature_contributions.map((c) => {
+            {filteredContributions.map((c) => {
               const pct = Math.min(1, Math.abs(c.contribution) / maxAbs);
               const direction = c.contribution >= 0 ? "+" : "-";
               return (
