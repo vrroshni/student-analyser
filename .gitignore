@@ -1,0 +1,32 @@
+.venv/
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+htmlcov/
+
+student_performance.db
+
+# Model artifacts
+backend/ml/models/*.joblib
+backend/ml/models/*.npy
+backend/ml/models/*.keras
+backend/ml/models/*.h5
+
+# Data outputs
+backend/data/*.csv
+
+# Node / Next
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+
+# Logs
+*.log
+
+# OS / IDE
+.DS_Store
+.vscode/
+.idea/
