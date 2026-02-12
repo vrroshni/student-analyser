@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from typing import List
 from typing import Optional
 
@@ -19,12 +20,20 @@ def create_prediction_record(
     confidence: float,
     model_used: str,
 ) -> PredictionRecord:
+    semesters = student.semesters
+    percentages = [((s.internal_marks + s.university_marks) / 600.0) * 100.0 for s in semesters]
+    avg_pct = float(sum(percentages) / max(1, len(percentages)))
+    last_pct = float(percentages[-1]) if percentages else 0.0
+    avg_att = float(sum(s.attendance for s in semesters) / max(1, len(semesters)))
+
     record = PredictionRecord(
         name=student.name,
+        department=student.department,
+        semesters_json=json.dumps([s.model_dump() for s in semesters]),
         age=student.age,
-        internal_marks=student.internal_marks,
-        previous_marks=student.previous_marks,
-        attendance=student.attendance,
+        avg_percentage=avg_pct,
+        last_percentage=last_pct,
+        avg_attendance=avg_att,
         prediction=prediction,
         confidence=confidence,
         model_used=model_used,

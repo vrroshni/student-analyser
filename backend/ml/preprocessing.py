@@ -6,7 +6,14 @@ from typing import Dict, List, Tuple
 import numpy as np
 
 
-FEATURES: List[str] = ["age", "internal_marks", "previous_marks", "attendance"]
+FEATURES: List[str] = [
+    "age",
+    *[
+        f"sem{sem}_{field}"
+        for sem in range(1, 9)
+        for field in ("internal", "university", "attendance")
+    ],
+]
 
 
 LABELS: List[str] = ["Needs Attention", "Average", "Good"]

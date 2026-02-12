@@ -45,3 +45,26 @@ def init_db() -> None:
 
         if "photo_filename" not in existing:
             conn.execute(text("ALTER TABLE prediction_records ADD COLUMN photo_filename VARCHAR"))
+
+        if "department" not in existing:
+            conn.execute(
+                text("ALTER TABLE prediction_records ADD COLUMN department VARCHAR DEFAULT ''")
+            )
+
+        if "semesters_json" not in existing:
+            conn.execute(text("ALTER TABLE prediction_records ADD COLUMN semesters_json VARCHAR"))
+
+        if "avg_percentage" not in existing:
+            conn.execute(
+                text("ALTER TABLE prediction_records ADD COLUMN avg_percentage FLOAT DEFAULT 0")
+            )
+
+        if "last_percentage" not in existing:
+            conn.execute(
+                text("ALTER TABLE prediction_records ADD COLUMN last_percentage FLOAT DEFAULT 0")
+            )
+
+        if "avg_attendance" not in existing:
+            conn.execute(
+                text("ALTER TABLE prediction_records ADD COLUMN avg_attendance FLOAT DEFAULT 0")
+            )

@@ -6,11 +6,16 @@ import numpy as np
 import pandas as pd
 
 
-def _label_from_rules(age: int, internal: float, previous: float, attendance: float) -> str:
+TOTAL_OUT_OF = 600
+INTERNAL_OUT_OF = 300
+UNIVERSITY_OUT_OF = 300
+
+
+def _label_from_rules(*, age: int, avg_pct: float, last_pct: float, avg_att: float) -> str:
     score = 0.0
-    score += 0.45 * internal
-    score += 0.35 * previous
-    score += 0.20 * attendance
+    score += 0.55 * avg_pct
+    score += 0.25 * last_pct
+    score += 0.20 * avg_att
 
     # Small age effect
     score += (age - 20) * 0.5
@@ -26,24 +31,34 @@ def generate(n: int = 500, seed: int = 42) -> pd.DataFrame:
     rng = np.random.default_rng(seed)
 
     age = rng.integers(15, 31, size=n)
-    internal = np.clip(rng.normal(65, 18, size=n), 0, 100)
-    previous = np.clip(rng.normal(62, 20, size=n), 0, 100)
-    attendance = np.clip(rng.normal(75, 15, size=n), 0, 100)
+
+    sem_internal = np.clip(rng.normal(190, 60, size=(n, 8)), 0, INTERNAL_OUT_OF)
+    sem_university = np.clip(rng.normal(185, 65, size=(n, 8)), 0, UNIVERSITY_OUT_OF)
+    sem_attendance = np.clip(rng.normal(78, 12, size=(n, 8)), 0, 100)
+
+    sem_pct = (sem_internal + sem_university) / float(TOTAL_OUT_OF) * 100.0
+    avg_pct = sem_pct.mean(axis=1)
+    last_pct = sem_pct[:, -1]
+    avg_att = sem_attendance.mean(axis=1)
 
     labels = [
-        _label_from_rules(int(a), float(i), float(p), float(at))
-        for a, i, p, at in zip(age, internal, previous, attendance)
+        _label_from_rules(
+            age=int(a),
+            avg_pct=float(ap),
+            last_pct=float(lp),
+            avg_att=float(aa),
+        )
+        for a, ap, lp, aa in zip(age, avg_pct, last_pct, avg_att)
     ]
 
-    return pd.DataFrame(
-        {
-            "age": age,
-            "internal_marks": internal.round(2),
-            "previous_marks": previous.round(2),
-            "attendance": attendance.round(2),
-            "label": labels,
-        }
-    )
+    data: dict[str, object] = {"age": age}
+    for sem in range(1, 9):
+        data[f"sem{sem}_internal"] = np.round(sem_internal[:, sem - 1]).astype(int)
+        data[f"sem{sem}_university"] = np.round(sem_university[:, sem - 1]).astype(int)
+        data[f"sem{sem}_attendance"] = np.round(sem_attendance[:, sem - 1], 2)
+    data["label"] = labels
+
+    return pd.DataFrame(data)
 
 
 if __name__ == "__main__":

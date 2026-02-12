@@ -4,6 +4,9 @@ import type { PredictionOutput } from "./StudentForm";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
+import { Bar, BarChart, CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 
 function dotClassFor(prediction: string): string {
   const p = prediction.toLowerCase();
@@ -91,6 +94,18 @@ export function PredictionResult({
     ...result.feature_contributions.map((c) => Math.abs(c.contribution))
   );
 
+  const chartData = (result.semesters ?? []).map((s) => {
+    const obtained = (s.internal_marks ?? 0) + (s.university_marks ?? 0);
+    const pct = (obtained / 600) * 100;
+    return {
+      semester: `Sem ${s.semester}`,
+      percentage: Number.isFinite(pct) ? pct : 0,
+      attendance: s.attendance ?? 0,
+      internal: s.internal_marks ?? 0,
+      university: s.university_marks ?? 0
+    };
+  });
+
   return (
     <Card className="border-border/70 bg-card/60 backdrop-blur">
       <CardHeader>
@@ -106,8 +121,100 @@ export function PredictionResult({
           <Badge variant={badgeVariantFor(result.prediction)}>{result.prediction}</Badge>
         </div>
 
+        <div className="rounded-lg border border-border/70 bg-background/40 px-4 py-3 text-sm">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="text-muted-foreground">
+              Department: <span className="font-medium text-foreground">{result.department ?? "-"}</span>
+            </div>
+            <div className="text-muted-foreground">
+              Semesters: <span className="font-medium text-foreground">{chartData.length || 0}</span>
+            </div>
+          </div>
+        </div>
+
         <div className="rounded-lg border border-border/70 bg-background/40 px-4 py-3 text-sm text-muted-foreground">
           {buildExplanation(result)}
+        </div>
+
+        <div>
+          <div className="text-sm font-semibold">Student performance</div>
+          {chartData.length ? (
+            <Tabs defaultValue="percentage" className="mt-3">
+              <TabsList>
+                <TabsTrigger value="percentage">Percentage</TabsTrigger>
+                <TabsTrigger value="attendance">Attendance</TabsTrigger>
+                <TabsTrigger value="marks">Marks Split</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="percentage">
+                <ChartContainer
+                  config={{
+                    percentage: { label: "Percentage", color: "hsl(var(--chart-1, 210 100% 66%))" }
+                  }}
+                >
+                  <LineChart data={chartData} margin={{ left: 8, right: 8, top: 8, bottom: 8 }}>
+                    <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
+                    <XAxis dataKey="semester" tickLine={false} axisLine={false} />
+                    <YAxis domain={[0, 100]} tickLine={false} axisLine={false} />
+                    <ChartTooltip />
+                    <Line
+                      type="monotone"
+                      dataKey="percentage"
+                      name="%"
+                      stroke="#60a5fa"
+                      strokeWidth={2}
+                      dot={{ r: 3 }}
+                    />
+                  </LineChart>
+                </ChartContainer>
+              </TabsContent>
+
+              <TabsContent value="attendance">
+                <ChartContainer
+                  config={{
+                    attendance: { label: "Attendance", color: "hsl(var(--chart-2, 164 100% 40%))" }
+                  }}
+                >
+                  <LineChart data={chartData} margin={{ left: 8, right: 8, top: 8, bottom: 8 }}>
+                    <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
+                    <XAxis dataKey="semester" tickLine={false} axisLine={false} />
+                    <YAxis domain={[0, 100]} tickLine={false} axisLine={false} />
+                    <ChartTooltip />
+                    <Line
+                      type="monotone"
+                      dataKey="attendance"
+                      name="Attendance %"
+                      stroke="#34d399"
+                      strokeWidth={2}
+                      dot={{ r: 3 }}
+                    />
+                  </LineChart>
+                </ChartContainer>
+              </TabsContent>
+
+              <TabsContent value="marks">
+                <ChartContainer
+                  config={{
+                    internal: { label: "Internal", color: "hsl(var(--chart-3, 48 100% 60%))" },
+                    university: { label: "University", color: "hsl(var(--chart-4, 330 100% 70%))" }
+                  }}
+                >
+                  <BarChart data={chartData} margin={{ left: 8, right: 8, top: 8, bottom: 8 }}>
+                    <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
+                    <XAxis dataKey="semester" tickLine={false} axisLine={false} />
+                    <YAxis domain={[0, 600]} tickLine={false} axisLine={false} />
+                    <ChartTooltip />
+                    <Bar dataKey="internal" name="Internal" stackId="a" fill="#fbbf24" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="university" name="University" stackId="a" fill="#fb7185" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ChartContainer>
+              </TabsContent>
+            </Tabs>
+          ) : (
+            <div className="mt-3 rounded-lg border border-border/70 bg-background/40 px-4 py-3 text-sm text-muted-foreground">
+              No semester data available for charting.
+            </div>
+          )}
         </div>
 
         <div>

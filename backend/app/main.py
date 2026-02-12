@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import warnings
 from typing import Generator, List, Literal, Optional
 
@@ -30,6 +31,19 @@ app.add_middleware(
 
 
 predictor = PredictorService()
+
+
+def _payload_from_student(student: StudentInput) -> dict:
+    payload: dict[str, float | int] = {"age": student.age}
+
+    # Fill sem1..sem8, using zeros for missing future semesters.
+    by_sem = {s.semester: s for s in student.semesters}
+    for sem in range(1, 9):
+        s = by_sem.get(sem)
+        payload[f"sem{sem}_internal"] = int(s.internal_marks) if s else 0
+        payload[f"sem{sem}_university"] = int(s.university_marks) if s else 0
+        payload[f"sem{sem}_attendance"] = float(s.attendance) if s else 0.0
+    return payload
 
 
 def get_db() -> Generator[Session, None, None]:
@@ -66,7 +80,8 @@ def predict(
     db: Session = Depends(get_db),
 ) -> PredictionOutput:
     try:
-        result = predictor.predict(student.model_dump(), model_type=model_type)
+        payload = _payload_from_student(student)
+        result = predictor.predict(payload, model_type=model_type)
     except ModelArtifactsNotFound as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -82,16 +97,18 @@ def predict(
 
     return PredictionOutput(
         record_id=record.id,
+        department=student.department,
+        semesters=student.semesters,
         prediction=result.prediction,
         confidence=result.confidence,
         model_used=result.model_used,
         feature_contributions=[
             FeatureContribution(
                 feature=f,
-                value=float(getattr(student, f)),
+                value=float(payload.get(f, 0.0)),
                 contribution=float(result.contributions.get(f, 0.0)),
             )
-            for f in ["age", "internal_marks", "previous_marks", "attendance"]
+            for f in list(payload.keys())
         ],
     )
 
@@ -100,23 +117,22 @@ def predict(
 async def predict_with_photo(
     name: str = Form(...),
     age: int = Form(...),
-    internal_marks: float = Form(...),
-    previous_marks: float = Form(...),
-    attendance: float = Form(...),
+    department: str = Form(...),
+    semesters_json: str = Form(...),
     model_type: Literal["ml", "dl"] = Query("ml"),
     photo: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
 ) -> PredictionOutput:
-    student = StudentInput(
-        name=name,
-        age=age,
-        internal_marks=internal_marks,
-        previous_marks=previous_marks,
-        attendance=attendance,
-    )
+    try:
+        semesters = json.loads(semesters_json)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Invalid semesters_json: {e}")
+
+    student = StudentInput(name=name, age=age, department=department, semesters=semesters)
 
     try:
-        result = predictor.predict(student.model_dump(), model_type=model_type)
+        payload = _payload_from_student(student)
+        result = predictor.predict(payload, model_type=model_type)
     except ModelArtifactsNotFound as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -144,16 +160,18 @@ async def predict_with_photo(
 
     return PredictionOutput(
         record_id=record.id,
+        department=student.department,
+        semesters=student.semesters,
         prediction=result.prediction,
         confidence=result.confidence,
         model_used=result.model_used,
         feature_contributions=[
             FeatureContribution(
                 feature=f,
-                value=float(getattr(student, f)),
+                value=float(payload.get(f, 0.0)),
                 contribution=float(result.contributions.get(f, 0.0)),
             )
-            for f in ["age", "internal_marks", "previous_marks", "attendance"]
+            for f in list(payload.keys())
         ],
     )
 
@@ -168,10 +186,12 @@ def history(
         {
             "id": r.id,
             "name": r.name,
+            "department": r.department,
             "age": r.age,
-            "internal_marks": r.internal_marks,
-            "previous_marks": r.previous_marks,
-            "attendance": r.attendance,
+            "avg_percentage": r.avg_percentage,
+            "last_percentage": r.last_percentage,
+            "avg_attendance": r.avg_attendance,
+            "semesters": json.loads(r.semesters_json) if r.semesters_json else [],
             "prediction": r.prediction,
             "confidence": r.confidence,
             "model_used": r.model_used,

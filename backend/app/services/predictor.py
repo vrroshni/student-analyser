@@ -20,7 +20,14 @@ except Exception:  # pragma: no cover
     keras = None
 
 
-FEATURES: List[str] = ["age", "internal_marks", "previous_marks", "attendance"]
+FEATURES: List[str] = [
+    "age",
+    *[
+        f"sem{sem}_{field}"
+        for sem in range(1, 9)
+        for field in ("internal", "university", "attendance")
+    ],
+]
 
 
 ModelType = Literal["ml", "dl"]

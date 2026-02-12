@@ -16,10 +16,15 @@ class PredictionRecord(Base):
 
     name: Mapped[Optional[str]] = mapped_column(String, nullable=True, default="")
 
+    department: Mapped[Optional[str]] = mapped_column(String, nullable=True, default="")
+
+    semesters_json: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+
     age: Mapped[int] = mapped_column(Integer, nullable=False)
-    internal_marks: Mapped[float] = mapped_column(Float, nullable=False)
-    previous_marks: Mapped[float] = mapped_column(Float, nullable=False)
-    attendance: Mapped[float] = mapped_column(Float, nullable=False)
+
+    avg_percentage: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    last_percentage: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    avg_attendance: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
 
     prediction: Mapped[str] = mapped_column(String, nullable=False)
     confidence: Mapped[float] = mapped_column(Float, nullable=False)
