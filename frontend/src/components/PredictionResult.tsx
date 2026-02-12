@@ -255,9 +255,9 @@ export function PredictionResult({
           </div>
         </div>
 
-        <div className="text-xs text-muted-foreground">
+        {/* <div className="text-xs text-muted-foreground">
           Note: For DL, contributions may be slower/approx depending on SHAP availability.
-        </div>
+        </div> */}
       </CardContent>
     </Card>
   );
