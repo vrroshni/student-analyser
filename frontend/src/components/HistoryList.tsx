@@ -77,7 +77,7 @@ export function HistoryList() {
 
         {!loading && !error && items.length > 0 ? (
           <div className="rounded-lg border border-border/70 bg-background/40">
-            <Table>
+            <Table className="min-w-[1200px]">
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-[84px]">Photo</TableHead>
