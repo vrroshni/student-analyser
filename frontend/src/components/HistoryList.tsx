@@ -4,6 +4,15 @@ import { useEffect, useState } from "react";
 
 import { api } from "@/lib/api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from "@/components/ui/table";
 
 type HistoryRecord = {
   id: number;
@@ -18,6 +27,13 @@ type HistoryRecord = {
   has_photo: boolean;
   created_at: string;
 };
+
+function badgeVariantFor(prediction: string): "success" | "warning" | "danger" {
+  const p = prediction.toLowerCase();
+  if (p.includes("good")) return "success";
+  if (p.includes("average")) return "warning";
+  return "danger";
+}
 
 export function HistoryList() {
   const [items, setItems] = useState<HistoryRecord[]>([]);
@@ -59,56 +75,59 @@ export function HistoryList() {
           <div className="text-sm text-muted-foreground">No history yet. Run a prediction first.</div>
         ) : null}
 
-        <div className="space-y-2">
-          {items.map((r) => (
-            <div
-              key={r.id}
-              className="rounded-lg border border-border/70 bg-background/40 px-4 py-3"
-            >
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <div className="text-sm font-semibold">{r.name || "(no name)"}</div>
-                  <div className="text-xs text-muted-foreground">{r.prediction}</div>
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  {new Date(r.created_at).toLocaleString()}
-                </div>
-              </div>
-
-              {r.has_photo ? (
-                <div className="mt-3">
-                  <img
-                    src={`http://localhost:8000/records/${r.id}/photo?t=${encodeURIComponent(
-                      r.created_at
-                    )}`}
-                    alt={r.name}
-                    className="h-16 w-16 rounded-md border border-border object-cover"
-                    loading="lazy"
-                  />
-                </div>
-              ) : null}
-
-              <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-muted-foreground sm:grid-cols-4">
-                <div>
-                  Age: <span className="text-foreground">{r.age}</span>
-                </div>
-                <div>
-                  Internal: <span className="text-foreground">{r.internal_marks}</span>
-                </div>
-                <div>
-                  Previous: <span className="text-foreground">{r.previous_marks}</span>
-                </div>
-                <div>
-                  Attendance: <span className="text-foreground">{r.attendance}</span>
-                </div>
-              </div>
-              <div className="mt-2 text-xs text-muted-foreground">
-                Model: <span className="text-foreground">{r.model_used}</span> · Confidence:{" "}
-                <span className="text-foreground">{Math.round(r.confidence * 100)}%</span>
-              </div>
-            </div>
-          ))}
-        </div>
+        {!loading && !error && items.length > 0 ? (
+          <div className="rounded-lg border border-border/70 bg-background/40">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[84px]">Photo</TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Prediction</TableHead>
+                  <TableHead className="text-right">Confidence</TableHead>
+                  <TableHead>Model</TableHead>
+                  <TableHead className="text-right">Age</TableHead>
+                  <TableHead className="text-right">Internal</TableHead>
+                  <TableHead className="text-right">Previous</TableHead>
+                  <TableHead className="text-right">Attendance</TableHead>
+                  <TableHead>Time</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {items.map((r) => (
+                  <TableRow key={r.id}>
+                    <TableCell>
+                      {r.has_photo ? (
+                        <img
+                          src={`http://localhost:8000/records/${r.id}/photo?t=${encodeURIComponent(
+                            r.created_at
+                          )}`}
+                          alt={r.name}
+                          className="h-10 w-10 rounded-md border border-border object-cover"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="h-10 w-10 rounded-md border border-dashed border-border" />
+                      )}
+                    </TableCell>
+                    <TableCell className="font-medium">{r.name || "(no name)"}</TableCell>
+                    <TableCell>
+                      <Badge variant={badgeVariantFor(r.prediction)}>{r.prediction}</Badge>
+                    </TableCell>
+                    <TableCell className="text-right">{Math.round(r.confidence * 100)}%</TableCell>
+                    <TableCell>{r.model_used}</TableCell>
+                    <TableCell className="text-right">{r.age}</TableCell>
+                    <TableCell className="text-right">{r.internal_marks}</TableCell>
+                    <TableCell className="text-right">{r.previous_marks}</TableCell>
+                    <TableCell className="text-right">{r.attendance}</TableCell>
+                    <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
+                      {new Date(r.created_at).toLocaleString()}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        ) : null}
 
         <button
           onClick={load}

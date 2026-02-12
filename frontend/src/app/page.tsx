@@ -11,12 +11,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 export default function Page() {
   const [result, setResult] = useState<PredictionOutput | null>(null);
   const [error, setError] = useState<string>("");
+  const [predictLoading, setPredictLoading] = useState<boolean>(false);
 
   return (
     <main className="min-h-screen">
       <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(1000px_500px_at_10%_10%,rgba(59,130,246,0.25),transparent),radial-gradient(900px_450px_at_90%_20%,rgba(20,184,166,0.18),transparent)]" />
 
-      <div className="mx-auto max-w-5xl px-4 pb-10 pt-8">
+      <div className="mx-auto max-w-7xl px-4 pb-10 pt-8">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <div className="text-xl font-bold tracking-tight">Student Performance Analyzer</div>
@@ -47,8 +48,9 @@ export default function Page() {
                 onError={(msg) => {
                   setError(msg);
                 }}
+                onLoadingChange={(l) => setPredictLoading(l)}
               />
-              <PredictionResult result={result} />
+              <PredictionResult result={result} loading={predictLoading} />
             </div>
           </TabsContent>
 

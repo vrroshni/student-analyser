@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api";
+import { Loader2 } from "lucide-react";
 
 export type StudentInput = {
   name: string;
@@ -35,6 +36,7 @@ export type PredictionOutput = {
 type Props = {
   onResult: (r: PredictionOutput) => void;
   onError: (msg: string) => void;
+  onLoadingChange?: (loading: boolean) => void;
 };
 
 const DEFAULTS: StudentInput = {
@@ -45,7 +47,7 @@ const DEFAULTS: StudentInput = {
   attendance: 85
 };
 
-export function StudentForm({ onResult, onError }: Props) {
+export function StudentForm({ onResult, onError, onLoadingChange }: Props) {
   const [modelType, setModelType] = useState<ModelType>("ml");
   const [loading, setLoading] = useState(false);
   const [values, setValues] = useState<StudentInput>(DEFAULTS);
@@ -70,6 +72,7 @@ export function StudentForm({ onResult, onError }: Props) {
     if (!canSubmit) return;
 
     setLoading(true);
+    onLoadingChange?.(true);
     onError("");
 
     try {
@@ -107,8 +110,22 @@ export function StudentForm({ onResult, onError }: Props) {
       }
     } finally {
       setLoading(false);
+      onLoadingChange?.(false);
     }
   }
+
+  useEffect(() => {
+    if (!photo) {
+      return;
+    }
+
+    const url = URL.createObjectURL(photo);
+    setPhotoPreviewUrl(url);
+
+    return () => {
+      URL.revokeObjectURL(url);
+    };
+  }, [photo]);
 
   return (
     <Card className="border-border/70 bg-card/60 backdrop-blur">
@@ -200,7 +217,14 @@ export function StudentForm({ onResult, onError }: Props) {
         </div>
 
         <Button className="w-full" disabled={!canSubmit || loading} onClick={submit}>
-          {loading ? "Predicting…" : "Predict Performance"}
+          {loading ? (
+            <span className="inline-flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Predicting
+            </span>
+          ) : (
+            "Predict Performance"
+          )}
         </Button>
       </CardContent>
     </Card>

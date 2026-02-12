@@ -3,6 +3,7 @@
 import type { PredictionOutput } from "./StudentForm";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 function dotClassFor(prediction: string): string {
   const p = prediction.toLowerCase();
@@ -11,7 +12,66 @@ function dotClassFor(prediction: string): string {
   return "bg-rose-400";
 }
 
-export function PredictionResult({ result }: { result: PredictionOutput | null }) {
+function badgeVariantFor(prediction: string): "success" | "warning" | "danger" {
+  const p = prediction.toLowerCase();
+  if (p.includes("good")) return "success";
+  if (p.includes("average")) return "warning";
+  return "danger";
+}
+
+function buildExplanation(result: PredictionOutput): string {
+  const sorted = [...result.feature_contributions].sort(
+    (a, b) => Math.abs(b.contribution) - Math.abs(a.contribution)
+  );
+  const top = sorted.slice(0, 2);
+  const positives = top.filter((t) => t.contribution >= 0);
+  const negatives = top.filter((t) => t.contribution < 0);
+
+  const parts: string[] = [];
+  if (positives.length) {
+    parts.push(
+      `Main factors pushing toward "${result.prediction}": ${positives
+        .map((p) => `${p.feature} (${p.value})`)
+        .join(", ")}.`
+    );
+  }
+  if (negatives.length) {
+    parts.push(
+      `Factors pulling away: ${negatives
+        .map((n) => `${n.feature} (${n.value})`)
+        .join(", ")}.`
+    );
+  }
+
+  if (!parts.length) {
+    return "Explanation is not available for this prediction.";
+  }
+  return parts.join(" ");
+}
+
+export function PredictionResult({
+  result,
+  loading
+}: {
+  result: PredictionOutput | null;
+  loading?: boolean;
+}) {
+  if (loading) {
+    return (
+      <Card className="border-border/70 bg-card/60 backdrop-blur">
+        <CardHeader>
+          <CardTitle>Prediction</CardTitle>
+          <CardDescription>Running model inference…</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="h-5 w-40 animate-pulse rounded bg-muted/40" />
+          <div className="h-4 w-64 animate-pulse rounded bg-muted/40" />
+          <div className="h-24 w-full animate-pulse rounded bg-muted/20" />
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (!result) {
     return (
       <Card className="border-border/70 bg-card/60 backdrop-blur">
@@ -43,7 +103,11 @@ export function PredictionResult({ result }: { result: PredictionOutput | null }
       <CardContent className="space-y-4">
         <div className="flex items-center gap-2">
           <div className={"h-2.5 w-2.5 rounded-full " + dotClass} />
-          <div className="text-sm font-semibold">{result.prediction}</div>
+          <Badge variant={badgeVariantFor(result.prediction)}>{result.prediction}</Badge>
+        </div>
+
+        <div className="rounded-lg border border-border/70 bg-background/40 px-4 py-3 text-sm text-muted-foreground">
+          {buildExplanation(result)}
         </div>
 
         <div>
