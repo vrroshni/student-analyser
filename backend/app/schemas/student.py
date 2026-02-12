@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 
 
 class StudentInput(BaseModel):
+    name: str = Field(..., min_length=1, max_length=120, description="Student name")
     age: int = Field(..., ge=15, le=30, description="Student age (15-30)")
     internal_marks: float = Field(..., ge=0, le=100, description="Internal assessment marks (0-100)")
     previous_marks: float = Field(..., ge=0, le=100, description="Previous exam marks (0-100)")
@@ -20,6 +21,7 @@ class FeatureContribution(BaseModel):
 
 
 class PredictionOutput(BaseModel):
+    record_id: int
     prediction: str
     confidence: float = Field(..., ge=0, le=1)
     model_used: str

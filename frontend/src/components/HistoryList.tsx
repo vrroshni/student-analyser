@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 
 type HistoryRecord = {
   id: number;
+  name: string;
   age: number;
   internal_marks: number;
   previous_marks: number;
@@ -14,6 +15,7 @@ type HistoryRecord = {
   prediction: string;
   confidence: number;
   model_used: string;
+  has_photo: boolean;
   created_at: string;
 };
 
@@ -63,12 +65,29 @@ export function HistoryList() {
               key={r.id}
               className="rounded-lg border border-border/70 bg-background/40 px-4 py-3"
             >
-              <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                <div className="text-sm font-semibold">{r.prediction}</div>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <div className="text-sm font-semibold">{r.name || "(no name)"}</div>
+                  <div className="text-xs text-muted-foreground">{r.prediction}</div>
+                </div>
                 <div className="text-xs text-muted-foreground">
                   {new Date(r.created_at).toLocaleString()}
                 </div>
               </div>
+
+              {r.has_photo ? (
+                <div className="mt-3">
+                  <img
+                    src={`http://localhost:8000/records/${r.id}/photo?t=${encodeURIComponent(
+                      r.created_at
+                    )}`}
+                    alt={r.name}
+                    className="h-16 w-16 rounded-md border border-border object-cover"
+                    loading="lazy"
+                  />
+                </div>
+              ) : null}
+
               <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-muted-foreground sm:grid-cols-4">
                 <div>
                   Age: <span className="text-foreground">{r.age}</span>
