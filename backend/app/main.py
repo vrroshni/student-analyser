@@ -35,16 +35,68 @@ app.add_middleware(
 predictor = PredictorService()
 
 
+def _rule_score(student: StudentInput) -> float:
+    # Compute the same rule-style score as the synthetic data generator uses,
+    # but based only on the semesters actually provided.
+    sems = student.semesters
+    if not sems:
+        return 0.0
+
+    pcts = [((s.internal_marks + s.university_marks) / 600.0) * 100.0 for s in sems]
+    avg_pct = sum(pcts) / len(pcts)
+    # Use the highest-numbered semester as "last".
+    last_sem = max(sems, key=lambda s: s.semester)
+    last_pct = ((last_sem.internal_marks + last_sem.university_marks) / 600.0) * 100.0
+    avg_att = sum(float(s.attendance) for s in sems) / len(sems)
+
+    score = 0.0
+    score += 0.55 * avg_pct
+    score += 0.25 * last_pct
+    score += 0.20 * avg_att
+    score += (student.age - 20) * 0.5
+    return float(score)
+
+
+def _rule_label(score: float) -> str:
+    if score >= 75:
+        return "Good"
+    if score >= 55:
+        return "Average"
+    return "Needs Attention"
+
+
+def _apply_rule_override(*, student: StudentInput, prediction: str, confidence: float, model_used: str) -> tuple[str, float, str]:
+    score = _rule_score(student)
+    label = _rule_label(score)
+
+    # Only override upward when the rule says the student is clearly in a higher band.
+    order = {"Needs Attention": 0, "Average": 1, "Good": 2}
+    if order.get(label, 0) > order.get(prediction, 0):
+        # Make confidence reflect a deterministic rule.
+        return label, max(confidence, 0.95), f"{model_used} + Rules"
+    return prediction, confidence, model_used
+
+
 def _payload_from_student(student: StudentInput) -> dict:
     payload: dict[str, float | int] = {"age": student.age}
 
-    # Fill sem1..sem8, using zeros for missing future semesters.
+    # Fill sem1..sem8.
+    # The model was trained on full sem1..sem8 vectors. If the user provides only a subset
+    # of semesters, zero-filling can be interpreted as very low performance.
+    # To keep behavior intuitive, we forward-fill missing semesters from the nearest
+    # previously provided semester, and back-fill leading gaps from the first provided.
     by_sem = {s.semester: s for s in student.semesters}
+    provided = sorted(by_sem.keys())
+    first = by_sem[provided[0]]
+
+    last_seen = first
     for sem in range(1, 9):
-        s = by_sem.get(sem)
-        payload[f"sem{sem}_internal"] = int(s.internal_marks) if s else 0
-        payload[f"sem{sem}_university"] = int(s.university_marks) if s else 0
-        payload[f"sem{sem}_attendance"] = float(s.attendance) if s else 0.0
+        if sem in by_sem:
+            last_seen = by_sem[sem]
+        s = last_seen
+        payload[f"sem{sem}_internal"] = int(s.internal_marks)
+        payload[f"sem{sem}_university"] = int(s.university_marks)
+        payload[f"sem{sem}_attendance"] = float(s.attendance)
     return payload
 
 
@@ -119,21 +171,28 @@ def predict(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Prediction failed: {e}")
 
-    record = create_prediction_record(
-        db,
+    final_pred, final_conf, final_model_used = _apply_rule_override(
         student=student,
         prediction=result.prediction,
         confidence=result.confidence,
         model_used=result.model_used,
     )
 
+    record = create_prediction_record(
+        db,
+        student=student,
+        prediction=final_pred,
+        confidence=final_conf,
+        model_used=final_model_used,
+    )
+
     return PredictionOutput(
         record_id=record.id,
         department=student.department,
         semesters=student.semesters,
-        prediction=result.prediction,
-        confidence=result.confidence,
-        model_used=result.model_used,
+        prediction=final_pred,
+        confidence=final_conf,
+        model_used=final_model_used,
         feature_contributions=[
             FeatureContribution(
                 feature=f,
@@ -171,12 +230,19 @@ async def predict_with_photo(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Prediction failed: {e}")
 
-    record = create_prediction_record(
-        db,
+    final_pred, final_conf, final_model_used = _apply_rule_override(
         student=student,
         prediction=result.prediction,
         confidence=result.confidence,
         model_used=result.model_used,
+    )
+
+    record = create_prediction_record(
+        db,
+        student=student,
+        prediction=final_pred,
+        confidence=final_conf,
+        model_used=final_model_used,
     )
 
     if photo is not None:
@@ -195,9 +261,9 @@ async def predict_with_photo(
         record_id=record.id,
         department=student.department,
         semesters=student.semesters,
-        prediction=result.prediction,
-        confidence=result.confidence,
-        model_used=result.model_used,
+        prediction=final_pred,
+        confidence=final_conf,
+        model_used=final_model_used,
         feature_contributions=[
             FeatureContribution(
                 feature=f,

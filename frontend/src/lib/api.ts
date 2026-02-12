@@ -24,6 +24,7 @@ api.interceptors.response.use(
     const status = err?.response?.status;
     if (status === 401 && typeof window !== "undefined") {
       window.localStorage.removeItem("teacher_access_token");
+      window.dispatchEvent(new Event("teacher:logout"));
     }
     return Promise.reject(err);
   }

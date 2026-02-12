@@ -19,6 +19,17 @@ export default function Page() {
   useEffect(() => {
     const t = window.localStorage.getItem("teacher_access_token") || "";
     setToken(t);
+
+    function onLogout() {
+      setToken("");
+      setResult(null);
+      setError("");
+    }
+
+    window.addEventListener("teacher:logout", onLogout);
+    return () => {
+      window.removeEventListener("teacher:logout", onLogout);
+    };
   }, []);
 
   function logout() {
@@ -49,13 +60,14 @@ export default function Page() {
         </div>
 
         {!token ? (
-          <div className="mt-6 grid grid-cols-1 gap-5 lg:grid-cols-2">
-            <TeacherAuthCard
-              onAuthed={(t) => {
-                setToken(t);
-              }}
-            />
-            <div className="hidden lg:block" />
+          <div className="mt-10 flex justify-center">
+            <div className="w-full max-w-md">
+              <TeacherAuthCard
+                onAuthed={(t) => {
+                  setToken(t);
+                }}
+              />
+            </div>
           </div>
         ) : (
           <Tabs defaultValue="predict" className="mt-6">
