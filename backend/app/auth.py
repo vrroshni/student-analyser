@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Generator, Optional
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -23,12 +23,12 @@ JWT_EXPIRES_MINUTES = 60 * 24
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 
-def get_db() -> Session:
+def get_db() -> Generator[Session, None, None]:
     db = SessionLocal()
     try:
-        return db
+        yield db
     finally:
-        pass
+        db.close()
 
 
 def hash_password(password: str) -> str:
@@ -55,7 +55,7 @@ def _unauthorized(detail: str = "Not authenticated") -> HTTPException:
 
 def get_current_teacher(
     token: str = Depends(oauth2_scheme),
-    db: Session = Depends(SessionLocal),
+    db: Session = Depends(get_db),
 ) -> Teacher:
     try:
         payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])

@@ -9,9 +9,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
+from app.auth import create_access_token, get_current_teacher, hash_password, verify_password
 from app.database.crud import create_prediction_record, list_prediction_records, set_prediction_photo
 from app.database.db import SessionLocal, init_db
-from app.schemas import FeatureContribution, PredictionOutput, StudentInput
+from app.database.models import Teacher
+from app.schemas import FeatureContribution, PredictionOutput, StudentInput, TeacherLogin, TeacherSignup, TokenResponse
 from app.services.predictor import ModelArtifactsNotFound, PredictorService
 
 
@@ -73,11 +75,41 @@ def health_check() -> dict:
     return {"status": "healthy"}
 
 
+@app.post("/auth/signup", response_model=TokenResponse)
+def teacher_signup(payload: TeacherSignup, db: Session = Depends(get_db)) -> TokenResponse:
+    existing = db.query(Teacher).filter(Teacher.email == payload.email.lower().strip()).first()
+    if existing is not None:
+        raise HTTPException(status_code=400, detail="Email already registered")
+
+    teacher = Teacher(
+        email=payload.email.lower().strip(),
+        password_hash=hash_password(payload.password),
+        name=(payload.name or "").strip(),
+    )
+    db.add(teacher)
+    db.commit()
+    db.refresh(teacher)
+
+    token = create_access_token(teacher_id=teacher.id)
+    return TokenResponse(access_token=token)
+
+
+@app.post("/auth/login", response_model=TokenResponse)
+def teacher_login(payload: TeacherLogin, db: Session = Depends(get_db)) -> TokenResponse:
+    teacher = db.query(Teacher).filter(Teacher.email == payload.email.lower().strip()).first()
+    if teacher is None or not verify_password(payload.password, teacher.password_hash):
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    token = create_access_token(teacher_id=teacher.id)
+    return TokenResponse(access_token=token)
+
+
 @app.post("/predict", response_model=PredictionOutput)
 def predict(
     student: StudentInput,
     model_type: Literal["ml", "dl"] = Query("ml"),
     db: Session = Depends(get_db),
+    _: Teacher = Depends(get_current_teacher),
 ) -> PredictionOutput:
     try:
         payload = _payload_from_student(student)
@@ -122,6 +154,7 @@ async def predict_with_photo(
     model_type: Literal["ml", "dl"] = Query("ml"),
     photo: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
+    _: Teacher = Depends(get_current_teacher),
 ) -> PredictionOutput:
     try:
         semesters = json.loads(semesters_json)
@@ -180,6 +213,7 @@ async def predict_with_photo(
 def history(
     limit: int = Query(50, ge=1, le=500),
     db: Session = Depends(get_db),
+    _: Teacher = Depends(get_current_teacher),
 ) -> List[dict]:
     records = list_prediction_records(db, limit=limit)
     return [
@@ -203,7 +237,11 @@ def history(
 
 
 @app.get("/records/{record_id}/photo")
-def get_record_photo(record_id: int, db: Session = Depends(get_db)) -> Response:
+def get_record_photo(
+    record_id: int,
+    db: Session = Depends(get_db),
+    _: Teacher = Depends(get_current_teacher),
+) -> Response:
     from app.database.models import PredictionRecord
 
     record = db.get(PredictionRecord, record_id)

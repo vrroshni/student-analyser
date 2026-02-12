@@ -1,17 +1,32 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import type { PredictionOutput } from "@/components/StudentForm";
 import { HistoryList } from "@/components/HistoryList";
 import { StudentForm } from "@/components/StudentForm";
 import { PredictionResult } from "@/components/PredictionResult";
+import { TeacherAuthCard } from "@/components/TeacherAuthCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 
 export default function Page() {
   const [result, setResult] = useState<PredictionOutput | null>(null);
   const [error, setError] = useState<string>("");
   const [predictLoading, setPredictLoading] = useState<boolean>(false);
+  const [token, setToken] = useState<string>("");
+
+  useEffect(() => {
+    const t = window.localStorage.getItem("teacher_access_token") || "";
+    setToken(t);
+  }, []);
+
+  function logout() {
+    window.localStorage.removeItem("teacher_access_token");
+    setToken("");
+    setResult(null);
+    setError("");
+  }
 
   return (
     <main className="min-h-screen">
@@ -25,39 +40,56 @@ export default function Page() {
               FastAPI + Scikit-learn + TensorFlow (optional) + SHAP + SQLite
             </div>
           </div>
+
+          {token ? (
+            <Button variant="secondary" onClick={logout}>
+              Logout
+            </Button>
+          ) : null}
         </div>
 
-        <Tabs defaultValue="predict" className="mt-6">
-          <TabsList>
-            <TabsTrigger value="predict">Predict</TabsTrigger>
-            <TabsTrigger value="history">History</TabsTrigger>
-          </TabsList>
+        {!token ? (
+          <div className="mt-6 grid grid-cols-1 gap-5 lg:grid-cols-2">
+            <TeacherAuthCard
+              onAuthed={(t) => {
+                setToken(t);
+              }}
+            />
+            <div className="hidden lg:block" />
+          </div>
+        ) : (
+          <Tabs defaultValue="predict" className="mt-6">
+            <TabsList>
+              <TabsTrigger value="predict">Predict</TabsTrigger>
+              <TabsTrigger value="history">History</TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="predict">
-            {error ? (
-              <div className="mb-5 rounded-lg border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm">
-                {error}
+            <TabsContent value="predict">
+              {error ? (
+                <div className="mb-5 rounded-lg border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm">
+                  {error}
+                </div>
+              ) : null}
+
+              <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+                <StudentForm
+                  onResult={(r) => {
+                    setResult(r);
+                  }}
+                  onError={(msg) => {
+                    setError(msg);
+                  }}
+                  onLoadingChange={(l) => setPredictLoading(l)}
+                />
+                <PredictionResult result={result} loading={predictLoading} />
               </div>
-            ) : null}
+            </TabsContent>
 
-            <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-              <StudentForm
-                onResult={(r) => {
-                  setResult(r);
-                }}
-                onError={(msg) => {
-                  setError(msg);
-                }}
-                onLoadingChange={(l) => setPredictLoading(l)}
-              />
-              <PredictionResult result={result} loading={predictLoading} />
-            </div>
-          </TabsContent>
-
-          <TabsContent value="history">
-            <HistoryList />
-          </TabsContent>
-        </Tabs>
+            <TabsContent value="history">
+              <HistoryList />
+            </TabsContent>
+          </Tabs>
+        )}
       </div>
     </main>
   );
