@@ -9,11 +9,20 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
-from app.auth import create_access_token, get_current_teacher, hash_password, verify_password
-from app.database.crud import create_prediction_record, list_prediction_records, set_prediction_photo
+from app.auth import AuthPrincipal, create_access_token, get_current_teacher, hash_password, require_principal, verify_password
+from app.database.crud import create_prediction_record, list_prediction_records, list_prediction_records_for_student, set_prediction_photo
 from app.database.db import SessionLocal, init_db
-from app.database.models import Teacher
-from app.schemas import FeatureContribution, PredictionOutput, StudentInput, TeacherLogin, TeacherSignup, TokenResponse
+from app.database.models import Student, Teacher
+from app.schemas import (
+    FeatureContribution,
+    PredictionOutput,
+    StudentInput,
+    StudentLogin,
+    StudentSignup,
+    TeacherLogin,
+    TeacherSignup,
+    TokenResponse,
+)
 from app.services.predictor import ModelArtifactsNotFound, PredictorService
 
 
@@ -65,9 +74,79 @@ def _rule_label(score: float) -> str:
     return "Needs Attention"
 
 
+def _assess_data_quality(student: StudentInput) -> tuple[bool, float]:
+    """
+    Assess the quality of student data and return (is_suspicious, quality_score).
+    Quality score ranges from 0.0 (very bad) to 1.0 (good quality).
+    """
+    sems = student.semesters
+    if not sems:
+        return True, 0.0
+    
+    quality_score = 1.0
+    is_suspicious = False
+    
+    # Check for very low marks
+    percentages = [((s.internal_marks + s.university_marks) / 600.0) * 100.0 for s in sems]
+    avg_pct = sum(percentages) / len(percentages)
+    
+    # Penalize very low averages (5-15% range is suspicious)
+    if avg_pct < 15.0:
+        quality_score *= 0.5
+        is_suspicious = True
+    elif avg_pct < 25.0:
+        quality_score *= 0.7
+    
+    # Check for very low attendance
+    avg_att = sum(s.attendance for s in sems) / len(sems)
+    if avg_att < 10.0:
+        quality_score *= 0.6
+        is_suspicious = True
+    elif avg_att < 30.0:
+        quality_score *= 0.8
+    
+    # Check for unrealistic patterns: all semesters have identical marks
+    if len(sems) > 1:
+        first = sems[0]
+        all_identical = all(
+            s.internal_marks == first.internal_marks and 
+            s.university_marks == first.university_marks and
+            s.attendance == first.attendance
+            for s in sems
+        )
+        if all_identical:
+            quality_score *= 0.7
+            is_suspicious = True
+    
+    # Check if only providing very few semesters with very low marks
+    if len(sems) <= 2 and avg_pct < 20.0:
+        quality_score *= 0.8
+        is_suspicious = True
+    
+    return is_suspicious, max(0.0, min(1.0, quality_score))
+
+
 def _apply_rule_override(*, student: StudentInput, prediction: str, confidence: float, model_used: str) -> tuple[str, float, str]:
     score = _rule_score(student)
     label = _rule_label(score)
+    
+    # Assess data quality
+    is_suspicious, quality_score = _assess_data_quality(student)
+    
+    # If data quality is poor, adjust confidence and potentially downgrade prediction
+    if is_suspicious:
+        # Reduce confidence based on quality score
+        confidence = confidence * quality_score
+        
+        # For very poor quality data (quality_score < 0.6), force to "Needs Attention"
+        if quality_score < 0.6:
+            return "Needs Attention", confidence, f"{model_used} + Quality Check"
+        
+        # For moderately poor quality (0.6 <= quality_score < 0.8), cap at "Average"
+        if quality_score < 0.8:
+            order = {"Needs Attention": 0, "Average": 1, "Good": 2}
+            if order.get(prediction, 0) > 1:  # If predicted "Good"
+                return "Average", confidence, f"{model_used} + Quality Check"
 
     # Only override upward when the rule says the student is clearly in a higher band.
     order = {"Needs Attention": 0, "Average": 1, "Good": 2}
@@ -142,7 +221,7 @@ def teacher_signup(payload: TeacherSignup, db: Session = Depends(get_db)) -> Tok
     db.commit()
     db.refresh(teacher)
 
-    token = create_access_token(teacher_id=teacher.id)
+    token = create_access_token(role="teacher", subject_id=teacher.id)
     return TokenResponse(access_token=token)
 
 
@@ -152,7 +231,36 @@ def teacher_login(payload: TeacherLogin, db: Session = Depends(get_db)) -> Token
     if teacher is None or not verify_password(payload.password, teacher.password_hash):
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
-    token = create_access_token(teacher_id=teacher.id)
+    token = create_access_token(role="teacher", subject_id=teacher.id)
+    return TokenResponse(access_token=token)
+
+
+@app.post("/auth/student/signup", response_model=TokenResponse)
+def student_signup(payload: StudentSignup, db: Session = Depends(get_db)) -> TokenResponse:
+    existing = db.query(Student).filter(Student.email == payload.email.lower().strip()).first()
+    if existing is not None:
+        raise HTTPException(status_code=400, detail="Email already registered")
+
+    student = Student(
+        email=payload.email.lower().strip(),
+        password_hash=hash_password(payload.password),
+        name=(payload.name or "").strip(),
+    )
+    db.add(student)
+    db.commit()
+    db.refresh(student)
+
+    token = create_access_token(role="student", subject_id=student.id)
+    return TokenResponse(access_token=token)
+
+
+@app.post("/auth/student/login", response_model=TokenResponse)
+def student_login(payload: StudentLogin, db: Session = Depends(get_db)) -> TokenResponse:
+    student = db.query(Student).filter(Student.email == payload.email.lower().strip()).first()
+    if student is None or not verify_password(payload.password, student.password_hash):
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    token = create_access_token(role="student", subject_id=student.id)
     return TokenResponse(access_token=token)
 
 
@@ -161,7 +269,7 @@ def predict(
     student: StudentInput,
     model_type: Literal["ml", "dl"] = Query("ml"),
     db: Session = Depends(get_db),
-    _: Teacher = Depends(get_current_teacher),
+    principal: AuthPrincipal = Depends(require_principal),
 ) -> PredictionOutput:
     try:
         payload = _payload_from_student(student)
@@ -184,6 +292,7 @@ def predict(
         prediction=final_pred,
         confidence=final_conf,
         model_used=final_model_used,
+        student_id=(principal.id if principal.role == "student" else None),
     )
 
     return PredictionOutput(
@@ -213,7 +322,7 @@ async def predict_with_photo(
     model_type: Literal["ml", "dl"] = Query("ml"),
     photo: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
-    _: Teacher = Depends(get_current_teacher),
+    principal: AuthPrincipal = Depends(require_principal),
 ) -> PredictionOutput:
     try:
         semesters = json.loads(semesters_json)
@@ -243,6 +352,7 @@ async def predict_with_photo(
         prediction=final_pred,
         confidence=final_conf,
         model_used=final_model_used,
+        student_id=(principal.id if principal.role == "student" else None),
     )
 
     if photo is not None:
@@ -279,12 +389,16 @@ async def predict_with_photo(
 def history(
     limit: int = Query(50, ge=1, le=500),
     db: Session = Depends(get_db),
-    _: Teacher = Depends(get_current_teacher),
+    principal: AuthPrincipal = Depends(require_principal),
 ) -> List[dict]:
-    records = list_prediction_records(db, limit=limit)
+    if principal.role == "teacher":
+        records = list_prediction_records(db, limit=limit)
+    else:
+        records = list_prediction_records_for_student(db, student_id=principal.id, limit=limit)
     return [
         {
             "id": r.id,
+            "student_id": r.student_id,
             "name": r.name,
             "department": r.department,
             "age": r.age,
@@ -306,13 +420,16 @@ def history(
 def get_record_photo(
     record_id: int,
     db: Session = Depends(get_db),
-    _: Teacher = Depends(get_current_teacher),
+    principal: AuthPrincipal = Depends(require_principal),
 ) -> Response:
     from app.database.models import PredictionRecord
 
     record = db.get(PredictionRecord, record_id)
     if record is None or record.photo is None:
         raise HTTPException(status_code=404, detail="Photo not found")
+
+    if principal.role == "student" and record.student_id != principal.id:
+        raise HTTPException(status_code=403, detail="Not allowed")
 
     media_type = record.photo_content_type or "application/octet-stream"
     return Response(content=record.photo, media_type=media_type)

@@ -4,6 +4,7 @@ This file contains the **Use Case diagrams** for the Student Performance Analyze
 
 Actors:
 - **Teacher** (primary)
+- **Student**
 
 System:
 - **Student Performance Analyzer Web App**
@@ -15,6 +16,7 @@ System:
 ```mermaid
 flowchart LR
   Teacher[Actor: Teacher]
+  Student[Actor: Student]
 
   subgraph System[Student Performance Analyzer]
     UC1((Sign Up))
@@ -25,7 +27,8 @@ flowchart LR
     UC6((Select Model: ML/DL))
     UC7((Predict Performance))
     UC8((View Explanation / Contributions))
-    UC9((View Prediction History))
+    UC9((View Prediction History (All)))
+    UC10((View Own Prediction History))
   end
 
   Teacher --> UC1
@@ -48,48 +51,48 @@ flowchart LR
 ## Use Case Specifications (Word-friendly)
 
 ### UC1: Sign Up
-- **Actor**: Teacher
+- **Actor**: Teacher / Student
 - **Preconditions**:
-  - Teacher is not logged in
+  - User is not logged in
 - **Main flow**:
-  - Teacher enters email + password (+ optional name)
-  - System validates and creates teacher record
-  - System returns JWT token
+  - User enters email + password (+ optional name)
+  - System validates and creates a teacher/student record
+  - System returns JWT token (includes role claim)
 - **Postconditions**:
-  - Teacher is registered and authenticated
+  - User is registered and authenticated
 - **Failure cases**:
   - Email already registered
   - Invalid input
 
 ### UC2: Log In
-- **Actor**: Teacher
+- **Actor**: Teacher / Student
 - **Preconditions**:
-  - Teacher already has an account
+  - User already has an account
 - **Main flow**:
-  - Teacher enters email + password
+  - User enters email + password
   - System verifies and returns JWT
 - **Failure cases**:
   - Wrong email/password
 
 ### UC4: Enter Student Data
-- **Actor**: Teacher
+- **Actor**: Teacher / Student
 - **Preconditions**:
-  - Teacher is logged in
+  - User is logged in
 - **Main flow**:
-  - Teacher enters age and semester details (marks + attendance)
+  - User enters age and semester details (marks + attendance)
   - System validates inputs
 
 ### UC6: Select Model (ML/DL)
-- **Actor**: Teacher
+- **Actor**: Teacher / Student
 - **Preconditions**:
-  - Teacher is logged in
+  - User is logged in
 - **Main flow**:
-  - Teacher chooses `ml` or `dl`
+  - User chooses `ml` or `dl`
 
 ### UC7: Predict Performance
-- **Actor**: Teacher
+- **Actor**: Teacher / Student
 - **Preconditions**:
-  - Teacher is logged in
+  - User is logged in
   - Model artifacts exist OR training has been run
 - **Main flow**:
   - System runs inference and returns label + confidence
@@ -99,19 +102,27 @@ flowchart LR
   - Backend not running
 
 ### UC8: View Explanation / Contributions
-- **Actor**: Teacher
+- **Actor**: Teacher / Student
 - **Preconditions**:
   - Prediction has been performed
 - **Main flow**:
   - System shows feature contribution values (SHAP)
 
-### UC9: View Prediction History
+### UC9: View Prediction History (All)
 - **Actor**: Teacher
 - **Preconditions**:
   - Teacher is logged in
 - **Main flow**:
   - Teacher opens History tab
   - System loads stored prediction records
+
+### UC10: View Own Prediction History
+- **Actor**: Student
+- **Preconditions**:
+  - Student is logged in
+- **Main flow**:
+  - Student opens History tab
+  - System loads stored prediction records owned by the logged-in student
 
 ---
 
@@ -123,6 +134,7 @@ If you prefer PlantUML (easy to export as image in many tools), use this:
 @startuml
 left to right direction
 actor Teacher
+actor Student
 rectangle "Student Performance Analyzer" {
   usecase "Sign Up" as UC1
   usecase "Log In" as UC2
@@ -132,7 +144,8 @@ rectangle "Student Performance Analyzer" {
   usecase "Select Model (ML/DL)" as UC6
   usecase "Predict Performance" as UC7
   usecase "View Explanation" as UC8
-  usecase "View History" as UC9
+  usecase "View History (All)" as UC9
+  usecase "View Own History" as UC10
 }
 Teacher --> UC1
 Teacher --> UC2
@@ -143,6 +156,15 @@ Teacher --> UC6
 Teacher --> UC7
 Teacher --> UC8
 Teacher --> UC9
+Student --> UC1
+Student --> UC2
+Student --> UC3
+Student --> UC4
+Student --> UC5
+Student --> UC6
+Student --> UC7
+Student --> UC8
+Student --> UC10
 UC4 --> UC7
 UC6 --> UC7
 UC5 --> UC7

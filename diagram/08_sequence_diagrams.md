@@ -2,9 +2,41 @@
 
 ## Description
 
-Sequence diagrams show the step-by-step interactions between components for the three main operations: Teacher Login, Student Performance Prediction, and Prediction History Retrieval.
+Sequence diagrams show the step-by-step interactions between components for the main operations: Teacher/Student Login, Student Performance Prediction, and Prediction History Retrieval with role-based access.
 
 ---
+
+## 1.1 Student Login Flow
+
+```mermaid
+sequenceDiagram
+    actor Student
+    participant Frontend as Next.js Frontend
+    participant Backend as FastAPI Backend
+    participant Auth as Auth Module
+    participant DB as SQLite Database
+
+    Student->>Frontend: Enter email + password, click "Login"
+    Frontend->>Frontend: Validate input (Zod schema)
+    Frontend->>Backend: POST /auth/student/login {email, password}
+    Backend->>Backend: Validate payload (Pydantic StudentLogin)
+    Backend->>DB: SELECT student WHERE email = ?
+    DB-->>Backend: Student record (id, password_hash)
+    Backend->>Auth: verify_password(password, stored_hash)
+
+    alt Password Valid
+        Auth-->>Backend: True
+        Backend->>Auth: create_access_token(role="student", subject_id)
+        Auth-->>Backend: JWT token (HS256, 24h expiry)
+        Backend-->>Frontend: 200 {access_token, token_type: "bearer"}
+        Frontend->>Frontend: Store token in localStorage (access_token)
+        Frontend-->>Student: Show Predict / History tabs
+    else Password Invalid
+        Auth-->>Backend: False
+        Backend-->>Frontend: 401 "Invalid email or password"
+        Frontend-->>Student: Display error message
+    end
+```
 
 ## 1. Teacher Login Flow
 
@@ -26,10 +58,10 @@ sequenceDiagram
 
     alt Password Valid
         Auth-->>Backend: True
-        Backend->>Auth: create_access_token(teacher_id)
+        Backend->>Auth: create_access_token(role="teacher", subject_id)
         Auth-->>Backend: JWT token (HS256, 24h expiry)
         Backend-->>Frontend: 200 {access_token, token_type: "bearer"}
-        Frontend->>Frontend: Store token in localStorage
+        Frontend->>Frontend: Store token in localStorage (access_token)
         Frontend-->>Teacher: Show Predict / History tabs
     else Password Invalid
         Auth-->>Backend: False
@@ -57,8 +89,8 @@ sequenceDiagram
     Frontend->>Backend: POST /predict?model_type=ml<br/>Body: {name, age, dept, semesters}<br/>Header: Bearer JWT
 
     Backend->>Auth: Validate JWT token
-    Auth->>DB: Get teacher by ID from token
-    DB-->>Auth: Teacher record
+    Auth->>DB: Get principal by sub+role
+    DB-->>Auth: Teacher/Student record
     Auth-->>Backend: Authenticated
 
     Backend->>Backend: _payload_from_student()<br/>Build 25-feature vector<br/>(forward-fill missing semesters)
@@ -76,7 +108,7 @@ sequenceDiagram
 
     Backend->>Backend: _apply_rule_override()<br/>Compute rule score<br/>Upgrade label if rule > model
 
-    Backend->>DB: create_prediction_record()<br/>Store name, dept, age, semesters,<br/>prediction, confidence, model_used
+    Backend->>DB: create_prediction_record()<br/>Store name, dept, age, semesters,<br/>prediction, confidence, model_used,<br/>student_id (only if requester is a student)
 
     DB-->>Backend: record.id
 
@@ -103,8 +135,13 @@ sequenceDiagram
     Backend->>Auth: Validate JWT token
     Auth-->>Backend: Authenticated
 
-    Backend->>DB: SELECT * FROM prediction_records<br/>ORDER BY created_at DESC<br/>LIMIT 200
-    DB-->>Backend: List of prediction records
+    alt Teacher role
+        Backend->>DB: SELECT * FROM prediction_records<br/>ORDER BY created_at DESC<br/>LIMIT 200
+        DB-->>Backend: List of prediction records
+    else Student role
+        Backend->>DB: SELECT * FROM prediction_records<br/>WHERE student_id = current_student_id<br/>ORDER BY created_at DESC<br/>LIMIT 200
+        DB-->>Backend: List of student's prediction records
+    end
 
     Backend->>Backend: Serialize records to JSON<br/>Parse semesters_json<br/>Format timestamps
 
@@ -143,10 +180,10 @@ sequenceDiagram
         Auth-->>Backend: bcrypt hash
         Backend->>DB: INSERT teacher (email, hash, name)
         DB-->>Backend: New teacher record
-        Backend->>Auth: create_access_token(teacher_id)
+        Backend->>Auth: create_access_token(role="teacher", subject_id)
         Auth-->>Backend: JWT token
         Backend-->>Frontend: 200 {access_token, token_type}
-        Frontend->>Frontend: Store token in localStorage
+        Frontend->>Frontend: Store token in localStorage (access_token)
         Frontend-->>Teacher: Show Predict / History tabs
     end
 ```

@@ -13,11 +13,12 @@ type TokenResponse = {
   token_type: string;
 };
 
-export function TeacherAuthCard({
+export function AuthCard({
   onAuthed
 }: {
   onAuthed: (token: string) => void;
 }) {
+  const [role, setRole] = useState<"teacher" | "student">("teacher");
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
@@ -36,7 +37,14 @@ export function TeacherAuthCard({
     setLoading(true);
     setError("");
     try {
-      const url = mode === "signup" ? "/auth/signup" : "/auth/login";
+      const url =
+        role === "teacher"
+          ? mode === "signup"
+            ? "/auth/signup"
+            : "/auth/login"
+          : mode === "signup"
+            ? "/auth/student/signup"
+            : "/auth/student/login";
       const payload =
         mode === "signup"
           ? { email, password, name }
@@ -44,7 +52,6 @@ export function TeacherAuthCard({
 
       const res = await api.post<TokenResponse>(url, payload);
       const token = res.data.access_token;
-      window.localStorage.setItem("teacher_access_token", token);
       onAuthed(token);
     } catch (e: any) {
       const detail = e?.response?.data?.detail;
@@ -57,8 +64,8 @@ export function TeacherAuthCard({
   return (
     <Card className="border-border/70 bg-card/60 backdrop-blur">
       <CardHeader>
-        <CardTitle>Teacher Access</CardTitle>
-        <CardDescription>Login or create a teacher account to use predictions and history.</CardDescription>
+        <CardTitle>Access</CardTitle>
+        <CardDescription>Login or create an account to use predictions and history.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {error ? (
@@ -66,6 +73,13 @@ export function TeacherAuthCard({
             {error}
           </div>
         ) : null}
+
+        <Tabs value={role} onValueChange={(v) => setRole(v as any)}>
+          <TabsList>
+            <TabsTrigger value="teacher">Teacher</TabsTrigger>
+            <TabsTrigger value="student">Student</TabsTrigger>
+          </TabsList>
+        </Tabs>
 
         <Tabs value={mode} onValueChange={(v) => setMode(v as any)}>
           <TabsList>

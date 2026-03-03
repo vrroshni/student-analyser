@@ -99,11 +99,11 @@ The Level 2 DFD further decomposes each Level 1 process into detailed sub-proces
 
 | Sub-Process | Description |
 |-------------|-------------|
-| **P1.1** Receive Auth Request | Receives HTTP POST request at `/auth/signup` or `/auth/login` |
-| **P1.2** Validate Payload | Validates request body against `TeacherSignup` or `TeacherLogin` Pydantic schema |
-| **P1.3** Query Teacher Record | Queries SQLite database for existing teacher record by email |
-| **P1.4** Hash / Verify Password | **Signup:** Hashes password using bcrypt and stores new teacher. **Login:** Verifies submitted password against stored hash |
-| **P1.5** Generate JWT Token | Creates JWT token using python-jose (HS256 algorithm, 24-hour expiry, teacher ID as subject) |
+| **P1.1** Receive Auth Request | Receives HTTP POST request at `/auth/signup`, `/auth/login`, `/auth/student/signup`, or `/auth/student/login` |
+| **P1.2** Validate Payload | Validates request body against `TeacherSignup`/`TeacherLogin` or `StudentSignup`/`StudentLogin` Pydantic schema |
+| **P1.3** Query User Record | Queries SQLite database for existing teacher/student record by email |
+| **P1.4** Hash / Verify Password | **Signup:** Hashes password using bcrypt and stores new user. **Login:** Verifies submitted password against stored hash |
+| **P1.5** Generate JWT Token | Creates JWT token using python-jose (HS256 algorithm, 24-hour expiry, subject id as `sub`, and role claim `teacher`/`student`) |
 | **P1.6** Return Token Response | Returns `TokenResponse` with access token and token type |
 
 ---
@@ -118,7 +118,8 @@ The Level 2 DFD further decomposes each Level 1 process into detailed sub-proces
                     + JWT Token
   ┌───────────┐  ──────────────────────────────►  ╭──────────────────╮
   │           │                                    │  P2.1            │
-  │  TEACHER  │                                    │  Receive         │
+  │ TEACHER/  │                                    │  Receive         │
+  │ STUDENT   │                                    │                 │
   │           │                                    │  Prediction      │
   └───────────┘                                    │  Request         │
         ▲                                          ╰────────┬─────────╯
@@ -128,7 +129,7 @@ The Level 2 DFD further decomposes each Level 1 process into detailed sub-proces
         │                                          │  P2.2            │  ──────────►  ═══════════════
         │                                          │  Validate JWT    │                 D1: SQLite
         │                                          │  Token           │  ◄──────────    Database
-        │                                          ╰────────┬─────────╯   Teacher OK  ═══════════════
+        │                                          ╰────────┬─────────╯   Principal OK ═══════════════
         │                                                   │                               ▲
         │                                                   ▼                               │
         │                                          ╭──────────────────╮                     │

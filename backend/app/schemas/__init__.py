@@ -1,4 +1,4 @@
-from .auth import TeacherLogin, TeacherSignup, TokenResponse
+from .auth import StudentLogin, StudentSignup, TeacherLogin, TeacherSignup, TokenResponse
 from .student import StudentInput, PredictionOutput, FeatureContribution
 
 __all__ = [
@@ -7,5 +7,7 @@ __all__ = [
     "FeatureContribution",
     "TeacherSignup",
     "TeacherLogin",
+    "StudentSignup",
+    "StudentLogin",
     "TokenResponse",
 ]

@@ -26,9 +26,9 @@ flowchart TB
         direction TB
         FastAPI["<b>FastAPI 0.109</b>\nUvicorn ASGI Server"]
         CORS["<b>CORS Middleware</b>\nAllows localhost:3000"]
-        Routes["<b>REST Endpoints</b>\nPOST /auth/signup\nPOST /auth/login\nPOST /predict\nGET /history"]
+        Routes["<b>REST Endpoints</b>\nPOST /auth/signup\nPOST /auth/login\nPOST /auth/student/signup\nPOST /auth/student/login\nPOST /predict\nPOST /predict-with-photo\nGET /history\nGET /records/{id}/photo"]
         Pydantic["<b>Pydantic 2.5</b>\nRequest/Response Validation"]
-        JWTAuth["<b>JWT Authentication</b>\npython-jose (HS256)\npasslib + bcrypt"]
+        JWTAuth["<b>JWT Authentication</b>\npython-jose (HS256)\nrole-based tokens (teacher/student)\npasslib + bcrypt"]
 
         FastAPI --> CORS
         FastAPI --> Routes
@@ -54,7 +54,7 @@ flowchart TB
 
     subgraph DataLayer["Data Layer"]
         direction LR
-        SQLite[("SQLite\nstudent_performance.db\n• teachers table\n• prediction_records table")]
+        SQLite[("SQLite\nstudent_performance.db\n• teachers table\n• students table\n• prediction_records table")]
         Artifacts[("Model Artifacts\n• rf_model.joblib\n• dl_model.keras\n• scaler.joblib\n• label_map.json\n• background.npy")]
         CSV[("Training Data\nstudent_data.csv\n500 synthetic rows")]
     end

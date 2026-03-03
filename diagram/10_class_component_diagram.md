@@ -15,6 +15,8 @@ classDiagram
         +health_check() dict
         +teacher_signup(payload, db) TokenResponse
         +teacher_login(payload, db) TokenResponse
+        +student_signup(payload, db) TokenResponse
+        +student_login(payload, db) TokenResponse
         +predict(student, model_type, db) PredictionOutput
         +predict_with_photo(...) PredictionOutput
         +history(limit, db) List~dict~
@@ -23,6 +25,14 @@ classDiagram
         -_rule_score(student) float
         -_rule_label(score) str
         -_apply_rule_override(student, pred, conf, model) tuple
+    }
+
+    class Student {
+        +id : int
+        +email : str
+        +password_hash : str
+        +name : str
+        +created_at : datetime
     }
 
     class PredictorService {
@@ -55,8 +65,10 @@ classDiagram
     class AuthModule {
         +hash_password(password) str
         +verify_password(password, hash) bool
-        +create_access_token(teacher_id) str
+        +create_access_token(role, subject_id) str
+        +require_principal(token, db) AuthPrincipal
         +get_current_teacher(token, db) Teacher
+        +get_current_student(token, db) Student
     }
 
     class Teacher {
@@ -69,6 +81,7 @@ classDiagram
 
     class PredictionRecord {
         +id : int
+        +student_id : int
         +name : str
         +department : str
         +semesters_json : str
@@ -128,6 +141,7 @@ classDiagram
     FastAPIApp --> PredictorService : uses
     FastAPIApp --> AuthModule : depends on
     FastAPIApp --> Teacher : queries
+    FastAPIApp --> Student : queries
     FastAPIApp --> PredictionRecord : creates and reads
     FastAPIApp --> StudentInput : validates input
     FastAPIApp --> PredictionOutput : returns
@@ -151,12 +165,12 @@ flowchart TD
         Layout["<b>RootLayout</b>\n(layout.tsx)\nHTML + Body wrapper"]
         Page["<b>Page</b>\n(page.tsx)\nMain App Component\nManages auth state + tabs"]
 
-        Auth["<b>TeacherAuthCard</b>\nLogin / Signup Forms\nZod validation"]
+        Auth["<b>AuthCard</b>\nTeacher/Student Login + Signup\nZod validation"]
         Form["<b>StudentForm</b>\nStudent Data Input\nDynamic semester list\nModel type selection\nPhoto upload"]
         Result["<b>PredictionResult</b>\nPrediction badge (color-coded)\nConfidence percentage\nSHAP feature chart\nExplanation text"]
         History["<b>HistoryList</b>\nPast predictions table\nSorted by date\nColor-coded badges"]
 
-        API["<b>api.ts</b>\nAxios Instance\nJWT Bearer interceptor\n401 → auto logout"]
+        API["<b>api.ts</b>\nAxios Instance\nJWT Bearer interceptor\nUses access_token\n401 → auto logout"]
 
         subgraph UIComponents["Shadcn UI Components"]
             Card["Card"]

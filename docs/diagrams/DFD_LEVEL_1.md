@@ -1,7 +1,7 @@
 # Data Flow Diagram (DFD) — Level 1
 
 This **Level 1 DFD** decomposes the system into its major processes:
-- Authentication (teacher signup/login)
+- Authentication (teacher and student signup/login)
 - Prediction
 - History
 
@@ -12,6 +12,7 @@ This **Level 1 DFD** decomposes the system into its major processes:
 ```mermaid
 flowchart TB
   Teacher[External Entity: Teacher]
+  Student[External Entity: Student]
 
   subgraph System[Student Performance Analyzer System]
     P1((P1: Authentication))
@@ -19,20 +20,26 @@ flowchart TB
     P3((P3: History Service))
   end
 
-  D1[(D1: SQLite DB\nTeachers + Prediction Records)]
+  D1[(D1: SQLite DB\nTeachers + Students + Prediction Records)]
   D2[(D2: Model Artifacts\nRF + NN + Scaler + Label Map)]
 
   Teacher -- Signup/Login --> P1
+  Student -- Signup/Login --> P1
   P1 -- JWT Token / Auth Errors --> Teacher
-  P1 -- Create/Verify Teacher --> D1
+  P1 -- JWT Token / Auth Errors --> Student
+  P1 -- Create/Verify Teacher/Student --> D1
 
   Teacher -- Student Inputs + Model Type + JWT --> P2
+  Student -- Student Inputs + Model Type + JWT --> P2
   P2 -- Prediction Result + Confidence + Contributions --> Teacher
+  P2 -- Prediction Result + Confidence + Contributions --> Student
   P2 -- Store Prediction Record --> D1
   P2 -- Load Models/Scaler --> D2
 
   Teacher -- History Request + JWT --> P3
+  Student -- History Request + JWT --> P3
   P3 -- Prediction History --> Teacher
+  P3 -- Prediction History (own only) --> Student
   P3 -- Read History Records --> D1
 ```
 
@@ -81,7 +88,7 @@ flowchart TB
 - **P1.3 Issue JWT token** (`python-jose`)
 
 ### P2 sublevel (P2.1..P2.6)
-- **P2.1 Validate JWT** (teacher must be logged in)
+- **P2.1 Validate JWT** (teacher or student must be logged in)
 - **P2.2 Build full 8-semester feature vector** (fill missing semesters)
 - **P2.3 Scale features** (StandardScaler)
 - **P2.4 Predict probabilities** (RF or NN)
@@ -90,5 +97,5 @@ flowchart TB
 
 ### P3 sublevel (P3.1..P3.3)
 - **P3.1 Validate JWT**
-- **P3.2 Query DB** for teacher’s past predictions
+- **P3.2 Query DB** for prediction records (teachers: all; students: filtered by `student_id`)
 - **P3.3 Return results to UI**

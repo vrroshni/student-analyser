@@ -267,12 +267,18 @@ Frontend URL:
 ## Using the application
 
 1. Open the frontend: http://localhost:3000
-2. Create a teacher account (Signup)
+2. Create an account (Signup)
+   - Teacher: Signup/Login under Teacher tab
+   - Student: Signup/Login under Student tab
 3. Login
-4. Enter student details and run prediction
+4. Enter details and run prediction
 5. Choose model type:
    - `ml` (Random Forest)
    - `dl` (Neural Network)
+
+History visibility:
+- Teacher accounts can view history for all records
+- Student accounts can view only their own history
 
 ---
 

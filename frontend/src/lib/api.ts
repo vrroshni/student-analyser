@@ -7,9 +7,25 @@ export const api = axios.create({
   }
 });
 
+function getAccessToken(): string {
+  if (typeof window === "undefined") return "";
+
+  const unified = window.localStorage.getItem("access_token") || "";
+  if (unified) return unified;
+
+  const legacyTeacher = window.localStorage.getItem("teacher_access_token") || "";
+  if (legacyTeacher) {
+    window.localStorage.setItem("access_token", legacyTeacher);
+    window.localStorage.removeItem("teacher_access_token");
+    return legacyTeacher;
+  }
+
+  return "";
+}
+
 api.interceptors.request.use((config) => {
   if (typeof window !== "undefined") {
-    const token = window.localStorage.getItem("teacher_access_token") || "";
+    const token = getAccessToken();
     if (token) {
       config.headers = config.headers ?? {};
       (config.headers as any).Authorization = `Bearer ${token}`;
@@ -23,8 +39,9 @@ api.interceptors.response.use(
   (err) => {
     const status = err?.response?.status;
     if (status === 401 && typeof window !== "undefined") {
+      window.localStorage.removeItem("access_token");
       window.localStorage.removeItem("teacher_access_token");
-      window.dispatchEvent(new Event("teacher:logout"));
+      window.dispatchEvent(new Event("auth:logout"));
     }
     return Promise.reject(err);
   }

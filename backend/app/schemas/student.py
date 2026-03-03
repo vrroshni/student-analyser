@@ -37,6 +37,47 @@ class StudentInput(BaseModel):
             raise ValueError("Duplicate semesters are not allowed")
         return self
 
+    @model_validator(mode="after")
+    def _validate_data_quality(self) -> "StudentInput":
+        """Validate that the student data is semantically meaningful and not clearly bad/incomplete."""
+        sems = self.semesters
+        
+        # Check if all marks are zero (clearly incomplete/bad data)
+        all_marks_zero = all(
+            s.internal_marks == 0 and s.university_marks == 0 
+            for s in sems
+        )
+        if all_marks_zero:
+            raise ValueError("Invalid data: All semester marks are zero. Please enter actual marks.")
+        
+        # Calculate average percentage
+        percentages = [
+            ((s.internal_marks + s.university_marks) / TOTAL_OUT_OF) * 100.0 
+            for s in sems
+        ]
+        avg_percentage = sum(percentages) / len(percentages) if percentages else 0.0
+        
+        # Reject extremely low average (below 5%) as likely data entry error
+        if avg_percentage < 5.0:
+            raise ValueError(
+                f"Invalid data: Average percentage is {avg_percentage:.1f}%, which is extremely low. "
+                "Please verify the marks are entered correctly."
+            )
+        
+        # Check if all attendance values are zero
+        all_attendance_zero = all(s.attendance == 0 for s in sems)
+        if all_attendance_zero and len(sems) > 0:
+            raise ValueError("Invalid data: Attendance cannot be 0% for all semesters. Please enter actual attendance.")
+        
+        # Check for unrealistic combination: very high marks with 0 attendance
+        if all_attendance_zero and avg_percentage > 70.0:
+            raise ValueError(
+                "Invalid data: Cannot have high marks (>70%) with 0% attendance in all semesters. "
+                "Please verify the data."
+            )
+        
+        return self
+
 
 class FeatureContribution(BaseModel):
     feature: str

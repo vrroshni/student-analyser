@@ -19,6 +19,7 @@ def create_prediction_record(
     prediction: str,
     confidence: float,
     model_used: str,
+    student_id: Optional[int] = None,
 ) -> PredictionRecord:
     semesters = student.semesters
     percentages = [((s.internal_marks + s.university_marks) / 600.0) * 100.0 for s in semesters]
@@ -27,6 +28,7 @@ def create_prediction_record(
     avg_att = float(sum(s.attendance for s in semesters) / max(1, len(semesters)))
 
     record = PredictionRecord(
+        student_id=student_id,
         name=student.name,
         department=student.department,
         semesters_json=json.dumps([s.model_dump() for s in semesters]),
@@ -46,6 +48,21 @@ def create_prediction_record(
 
 def list_prediction_records(db: Session, *, limit: int = 50) -> List[PredictionRecord]:
     stmt = select(PredictionRecord).order_by(desc(PredictionRecord.created_at)).limit(limit)
+    return list(db.scalars(stmt).all())
+
+
+def list_prediction_records_for_student(
+    db: Session,
+    *,
+    student_id: int,
+    limit: int = 50,
+) -> List[PredictionRecord]:
+    stmt = (
+        select(PredictionRecord)
+        .where(PredictionRecord.student_id == student_id)
+        .order_by(desc(PredictionRecord.created_at))
+        .limit(limit)
+    )
     return list(db.scalars(stmt).all())
 
 

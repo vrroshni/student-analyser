@@ -30,6 +30,9 @@ def init_db() -> None:
         cols = conn.execute(text("PRAGMA table_info(prediction_records)"))
         existing = {row[1] for row in cols.fetchall()}
 
+        if "student_id" not in existing:
+            conn.execute(text("ALTER TABLE prediction_records ADD COLUMN student_id INTEGER"))
+
         if "name" not in existing:
             conn.execute(
                 text("ALTER TABLE prediction_records ADD COLUMN name VARCHAR DEFAULT ''")

@@ -2,7 +2,7 @@
 
 ## Description
 
-The ER Diagram shows the database schema of the Student Performance Analyzer. The system uses SQLite with two tables: `teachers` (for authentication) and `prediction_records` (for storing prediction results).
+The ER Diagram shows the database schema of the Student Performance Analyzer. The system uses SQLite with three tables: `teachers` (teacher authentication), `students` (student authentication), and `prediction_records` (prediction results and history). Prediction records may optionally be owned by a student via `student_id`.
 
 ## ER Diagram
 
@@ -16,8 +16,17 @@ erDiagram
         datetime created_at "Default: UTC now"
     }
 
+    STUDENT {
+        int id PK "Primary Key, Auto-increment"
+        string email UK "Unique, NOT NULL"
+        string password_hash "bcrypt hash, NOT NULL"
+        string name "Student's display name"
+        datetime created_at "Default: UTC now"
+    }
+
     PREDICTION_RECORD {
         int id PK "Primary Key, Auto-increment"
+        int student_id FK "Nullable FK -> students.id (owner)"
         string name "Student name"
         string department "Student department"
         string semesters_json "JSON array of semester data"
@@ -34,7 +43,7 @@ erDiagram
         datetime created_at "Default: UTC now"
     }
 
-    TEACHER ||--o{ PREDICTION_RECORD : "creates (via authenticated session)"
+    STUDENT ||--o{ PREDICTION_RECORD : "owns (student_id)"
 ```
 
 ## Table Details
@@ -54,6 +63,7 @@ erDiagram
 | Column | Type | Constraints | Description |
 |--------|------|-------------|-------------|
 | `id` | INTEGER | PRIMARY KEY, AUTO-INCREMENT | Unique record identifier |
+| `student_id` | INTEGER | NULLABLE, INDEXED | Owner student ID. When present, the record belongs to that student and is visible in the student's history |
 | `name` | STRING | NULLABLE | Student's name |
 | `department` | STRING | NULLABLE | Student's department |
 | `semesters_json` | STRING | NULLABLE | JSON-encoded array of semester data (internal_marks, university_marks, attendance per semester) |
@@ -73,7 +83,8 @@ erDiagram
 
 | Relationship | Type | Description |
 |-------------|------|-------------|
-| Teacher → PredictionRecord | One-to-Many (implicit) | A teacher can create many prediction records. The relationship is enforced via JWT authentication (only authenticated teachers can create records), but there is no explicit foreign key column in the current schema. All authenticated teachers can view all prediction records |
+| Student → PredictionRecord | One-to-Many (FK) | A student can create many prediction records. Ownership is stored via `prediction_records.student_id` |
+| Teacher → PredictionRecord | Not modeled as FK | Teachers can create prediction records too, but teacher ownership is not stored as a foreign key. Teachers can view all records; students can only view records where `student_id` matches their account |
 
 ## semesters_json Structure
 

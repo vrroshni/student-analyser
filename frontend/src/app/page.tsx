@@ -6,7 +6,7 @@ import type { PredictionOutput } from "@/components/StudentForm";
 import { HistoryList } from "@/components/HistoryList";
 import { StudentForm } from "@/components/StudentForm";
 import { PredictionResult } from "@/components/PredictionResult";
-import { TeacherAuthCard } from "@/components/TeacherAuthCard";
+import { AuthCard } from "@/components/TeacherAuthCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 
@@ -17,7 +17,7 @@ export default function Page() {
   const [token, setToken] = useState<string>("");
 
   useEffect(() => {
-    const t = window.localStorage.getItem("teacher_access_token") || "";
+    const t = window.localStorage.getItem("access_token") || window.localStorage.getItem("teacher_access_token") || "";
     setToken(t);
 
     function onLogout() {
@@ -26,13 +26,14 @@ export default function Page() {
       setError("");
     }
 
-    window.addEventListener("teacher:logout", onLogout);
+    window.addEventListener("auth:logout", onLogout);
     return () => {
-      window.removeEventListener("teacher:logout", onLogout);
+      window.removeEventListener("auth:logout", onLogout);
     };
   }, []);
 
   function logout() {
+    window.localStorage.removeItem("access_token");
     window.localStorage.removeItem("teacher_access_token");
     setToken("");
     setResult(null);
@@ -62,8 +63,9 @@ export default function Page() {
         {!token ? (
           <div className="mt-10 flex justify-center">
             <div className="w-full max-w-md">
-              <TeacherAuthCard
+              <AuthCard
                 onAuthed={(t) => {
+                  window.localStorage.setItem("access_token", t);
                   setToken(t);
                 }}
               />

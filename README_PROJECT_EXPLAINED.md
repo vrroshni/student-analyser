@@ -160,11 +160,11 @@ The saved scaler is reused during inference so prediction input is transformed t
 ### Level 1 (Detailed Flow)
 
 ```text
-1) Teacher Signup/Login
-Teacher -> Frontend -> POST /auth/signup or /auth/login -> Backend
-Backend -> DB (store teacher / verify password)
-Backend -> Frontend (JWT token)
-Frontend -> localStorage (teacher_access_token)
+1) Teacher/Student Signup/Login
+Teacher/Student -> Frontend -> POST /auth/signup or /auth/login (teacher) OR /auth/student/signup or /auth/student/login (student) -> Backend
+Backend -> DB (store user / verify password)
+Backend -> Frontend (JWT token with role claim)
+Frontend -> localStorage (access_token)
 
 2) Prediction
 Teacher -> Frontend form -> POST /predict?model_type=ml|dl (with JWT)
@@ -252,14 +252,17 @@ It uses:
 ## 8) Authentication (what to explain in viva)
 
 ### How login works
-- Teacher signs up with email + password.
+- Teacher or student signs up with email + password.
 - Password is stored as a secure hash (bcrypt).
 - On login, backend verifies password and returns a **JWT token**.
-- Frontend stores token in browser localStorage as `teacher_access_token`.
+- JWT contains:
+  - `sub`: the user id
+  - `role`: `teacher` or `student`
+- Frontend stores token in browser localStorage as `access_token`.
 
 ### How protected endpoints work
 - Frontend sends `Authorization: Bearer <token>` on every request.
-- Backend validates token and extracts teacher identity.
+- Backend validates token and extracts a principal (role + id).
 - If token is invalid/expired, backend returns `401`.
 - Frontend clears localStorage token and forces logout.
 
@@ -327,9 +330,12 @@ It uses:
 
 - `POST /auth/signup`
 - `POST /auth/login`
+- `POST /auth/student/signup`
+- `POST /auth/student/login`
 - `POST /predict?model_type=ml|dl`
 - `POST /predict-with-photo?model_type=ml|dl`
-- History endpoints (used by frontend)
+- `GET /history`
+- `GET /records/{id}/photo`
 
 Use the interactive API docs:
 - http://localhost:8000/docs
