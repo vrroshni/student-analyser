@@ -1,18 +1,22 @@
 # Student Performance Analyzer
 
 End-to-end local project:
+
 - **Backend**: FastAPI + SQLite + SQLAlchemy + Scikit-learn + TensorFlow + SHAP
 - **Frontend**: Next.js (React) + Tailwind
 
 This README is written so you can run the project **from scratch** on:
+
 - **Windows** (no programming tools installed)
 - **macOS** (no programming tools installed)
 
 The project supports two model types:
+
 - **ML model**: Random Forest (`model_type=ml`)
 - **DL model**: Neural Network (`model_type=dl`)
 
 Models are stored at:
+
 - `backend/ml/models/`
 
 If the models are missing, the backend will show an error telling you to run the training scripts.
@@ -59,7 +63,7 @@ cd student-performance-analyzer
 ## A) Install Git
 
 1. Download and install Git for Windows:
-   - https://git-scm.com/download/win
+  - [https://git-scm.com/download/win](https://git-scm.com/download/win)
 2. Open **PowerShell** and verify:
 
 ```powershell
@@ -71,10 +75,10 @@ git --version
 ## B) Install Python
 
 1. Download and install Python from:
-   - https://www.python.org/downloads/
+  - [https://www.python.org/downloads/](https://www.python.org/downloads/)
 2. During installation, **check**:
-   - "Add python.exe to PATH"
-3. Verify:
+  - "Add python.exe to PATH"
+3. Verify:Backend
 
 ```powershell
 python --version
@@ -88,7 +92,7 @@ If `python` is not found, restart PowerShell after installation.
 ## C) Install Node.js (for the frontend)
 
 1. Download and install Node.js LTS:
-   - https://nodejs.org/
+  - [https://nodejs.org/](https://nodejs.org/)
 2. Verify:
 
 ```powershell
@@ -136,6 +140,7 @@ python backend\data\generate_data.py
 ```
 
 Expected output file:
+
 - `backend/data/student_data.csv`
 
 ### 5. Train the ML and DL models (recommended)
@@ -146,6 +151,7 @@ python backend\ml\train_dl.py
 ```
 
 This creates/overwrites artifacts in:
+
 - `backend/ml/models/`
 
 ### 6. Run the backend API
@@ -156,9 +162,10 @@ uvicorn app.main:app --reload
 ```
 
 Backend URLs:
-- http://localhost:8000
-- http://localhost:8000/health
-- http://localhost:8000/docs
+
+- [http://localhost:8000](http://localhost:8000)
+- [http://localhost:8000/health](http://localhost:8000/health)
+- [http://localhost:8000/docs](http://localhost:8000/docs)
 
 ---
 
@@ -173,7 +180,8 @@ npm run dev
 ```
 
 Frontend URL:
-- http://localhost:3000
+
+- [http://localhost:3000](http://localhost:3000)
 
 ---
 
@@ -244,8 +252,9 @@ PYTHONPATH=backend uvicorn app.main:app --reload
 ```
 
 Backend URLs:
-- http://localhost:8000
-- http://localhost:8000/docs
+
+- [http://localhost:8000](http://localhost:8000)
+- [http://localhost:8000/docs](http://localhost:8000/docs)
 
 ---
 
@@ -260,23 +269,25 @@ npm run dev
 ```
 
 Frontend URL:
-- http://localhost:3000
+
+- [http://localhost:3000](http://localhost:3000)
 
 ---
 
 ## Using the application
 
-1. Open the frontend: http://localhost:3000
+1. Open the frontend: [http://localhost:3000](http://localhost:3000)
 2. Create an account (Signup)
-   - Teacher: Signup/Login under Teacher tab
-   - Student: Signup/Login under Student tab
+  - Teacher: Signup/Login under Teacher tab
+  - Student: Signup/Login under Student tab
 3. Login
 4. Enter details and run prediction
 5. Choose model type:
-   - `ml` (Random Forest)
-   - `dl` (Neural Network)
+  - `ml` (Random Forest)
+  - `dl` (Neural Network)
 
 History visibility:
+
 - Teacher accounts can view history for all records
 - Student accounts can view only their own history
 

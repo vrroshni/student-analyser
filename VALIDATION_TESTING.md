@@ -34,7 +34,6 @@ The `_apply_rule_override()` function now:
 ```json
 {
   "name": "Test Student",
-  "age": 20,
   "department": "CSE",
   "semesters": [
     {"semester": 1, "internal_marks": 0, "university_marks": 0, "attendance": 50}
@@ -47,7 +46,6 @@ The `_apply_rule_override()` function now:
 ```json
 {
   "name": "Test Student",
-  "age": 20,
   "department": "CSE",
   "semesters": [
     {"semester": 1, "internal_marks": 5, "university_marks": 10, "attendance": 50}
@@ -60,7 +58,6 @@ The `_apply_rule_override()` function now:
 ```json
 {
   "name": "Test Student",
-  "age": 20,
   "department": "CSE",
   "semesters": [
     {"semester": 1, "internal_marks": 200, "university_marks": 200, "attendance": 0}
@@ -73,7 +70,6 @@ The `_apply_rule_override()` function now:
 ```json
 {
   "name": "Test Student",
-  "age": 20,
   "department": "CSE",
   "semesters": [
     {"semester": 1, "internal_marks": 250, "university_marks": 250, "attendance": 0}
@@ -86,7 +82,6 @@ The `_apply_rule_override()` function now:
 ```json
 {
   "name": "Struggling Student",
-  "age": 20,
   "department": "CSE",
   "semesters": [
     {"semester": 1, "internal_marks": 30, "university_marks": 30, "attendance": 40}
@@ -99,7 +94,6 @@ The `_apply_rule_override()` function now:
 ```json
 {
   "name": "Good Student",
-  "age": 20,
   "department": "CSE",
   "semesters": [
     {"semester": 1, "internal_marks": 200, "university_marks": 210, "attendance": 85}
@@ -135,7 +129,6 @@ curl -X POST http://localhost:8000/predict \
   -H "Authorization: Bearer YOUR_TOKEN_HERE" \
   -d '{
     "name": "Bad Data",
-    "age": 20,
     "department": "CSE",
     "semesters": [
       {"semester": 1, "internal_marks": 0, "university_marks": 0, "attendance": 50}
@@ -161,7 +154,6 @@ response = requests.post(
     headers={'Authorization': f'Bearer {token}'},
     json={
         'name': 'Bad Data',
-        'age': 20,
         'department': 'CSE',
         'semesters': [
             {'semester': 1, 'internal_marks': 0, 'university_marks': 0, 'attendance': 50}

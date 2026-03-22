@@ -41,7 +41,7 @@ flowchart TB
 - **P2.1** Receive prediction request + JWT + model_type
 - **P2.2** Validate JWT token (teacher must be authenticated)
 - **P2.3** Validate + normalize student input
-- **P2.4** Construct full feature vector (age + sem1..sem8 fields)
+- **P2.4** Construct full feature vector (sem1..sem8 fields)
 - **P2.5** Load model artifacts (RF/NN + scaler + label_map)
 - **P2.6** Scale input using saved scaler
 - **P2.7** Predict probabilities and choose label

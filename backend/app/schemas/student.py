@@ -26,7 +26,6 @@ class SemesterInput(BaseModel):
 
 class StudentInput(BaseModel):
     name: str = Field(..., min_length=1, max_length=120, description="Student name")
-    age: int = Field(..., ge=15, le=30, description="Student age (15-30)")
     department: str = Field(..., min_length=2, max_length=80, description="Department")
     semesters: List[SemesterInput] = Field(..., min_length=1, max_length=8)
 
@@ -93,6 +92,7 @@ class PredictionOutput(BaseModel):
     confidence: float = Field(..., ge=0, le=1)
     model_used: str
     feature_contributions: List[FeatureContribution]
+    model_accuracy: Optional[float] = None
     timestamp: datetime = Field(default_factory=datetime.utcnow)
 
     model_config = {

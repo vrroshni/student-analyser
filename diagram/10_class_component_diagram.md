@@ -85,7 +85,6 @@ classDiagram
         +name : str
         +department : str
         +semesters_json : str
-        +age : int
         +avg_percentage : float
         +last_percentage : float
         +avg_attendance : float
@@ -100,7 +99,6 @@ classDiagram
 
     class StudentInput {
         +name : str
-        +age : int
         +department : str
         +semesters : List~SemesterInput~
     }

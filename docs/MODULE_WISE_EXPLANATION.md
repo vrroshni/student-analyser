@@ -53,7 +53,7 @@ This document explains the project **module by module**, including what each mod
 
 - `StudentForm.tsx`
   - Collects student details:
-    - age, department, semesters
+    - department, semesters
     - model selection (ML/DL)
   - Calls prediction endpoint.
 
@@ -204,7 +204,7 @@ This document explains the project **module by module**, including what each mod
 
 **Responsibilities:**
 - Loads model artifacts lazily (only once) from `backend/ml/models/`.
-- Converts request payload into the correct 25-feature vector order.
+- Converts request payload into the correct 24-feature vector order.
 - Scales the input using the saved scaler.
 - Produces prediction probabilities.
 - Maps predicted class index → label string.

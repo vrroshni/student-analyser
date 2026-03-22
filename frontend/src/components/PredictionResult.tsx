@@ -91,7 +91,6 @@ export function PredictionResult({
 
   const providedSemesters = new Set((result.semesters ?? []).map((s) => s.semester));
   const filteredContributions = (result.feature_contributions ?? []).filter((c) => {
-    if (c.feature === "age") return true;
     const m = /^sem(\d+)_(internal|university|attendance)$/.exec(c.feature);
     if (!m) return true;
     const sem = Number(m[1]);
@@ -122,6 +121,12 @@ export function PredictionResult({
         <CardDescription>
           Model: <span className="font-medium">{result.model_used}</span> · Confidence:{" "}
           <span className="font-medium">{Math.round(result.confidence * 100)}%</span>
+          {result.model_accuracy != null && (
+            <>
+              {" "}· Model Accuracy:{" "}
+              <span className="font-medium">{Math.round(result.model_accuracy * 100)}%</span>
+            </>
+          )}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

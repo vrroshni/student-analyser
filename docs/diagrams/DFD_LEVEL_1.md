@@ -59,7 +59,7 @@ flowchart TB
 ### P2: Prediction Service
 - **Inputs**:
   - JWT token
-  - Student details (age, semesters)
+  - Student details (semesters)
   - Model type (`ml` or `dl`)
 - **Outputs**:
   - Predicted label + confidence

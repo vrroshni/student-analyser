@@ -86,14 +86,14 @@ sequenceDiagram
 
     Teacher->>Frontend: Fill student form + select model (ML/DL)
     Frontend->>Frontend: Validate all fields (Zod)
-    Frontend->>Backend: POST /predict?model_type=ml<br/>Body: {name, age, dept, semesters}<br/>Header: Bearer JWT
+    Frontend->>Backend: POST /predict?model_type=ml<br/>Body: {name, dept, semesters}<br/>Header: Bearer JWT
 
     Backend->>Auth: Validate JWT token
     Auth->>DB: Get principal by sub+role
     DB-->>Auth: Teacher/Student record
     Auth-->>Backend: Authenticated
 
-    Backend->>Backend: _payload_from_student()<br/>Build 25-feature vector<br/>(forward-fill missing semesters)
+    Backend->>Backend: _payload_from_student()<br/>Build 24-feature vector<br/>(forward-fill missing semesters)
 
     Backend->>Predictor: predict(payload, model_type="ml")
     Predictor->>Predictor: _ensure_ml_loaded()<br/>Load rf_model.joblib + scaler.joblib
@@ -108,7 +108,7 @@ sequenceDiagram
 
     Backend->>Backend: _apply_rule_override()<br/>Compute rule score<br/>Upgrade label if rule > model
 
-    Backend->>DB: create_prediction_record()<br/>Store name, dept, age, semesters,<br/>prediction, confidence, model_used,<br/>student_id (only if requester is a student)
+    Backend->>DB: create_prediction_record()<br/>Store name, dept, semesters,<br/>prediction, confidence, model_used,<br/>student_id (only if requester is a student)
 
     DB-->>Backend: record.id
 
@@ -147,7 +147,7 @@ sequenceDiagram
 
     Backend-->>Frontend: JSON array of records
 
-    Frontend->>Frontend: Render table with columns:<br/>Name, Dept, Age, Prediction,<br/>Confidence, Model, Avg%, Att%, Date
+    Frontend->>Frontend: Render table with columns:<br/>Name, Dept, Prediction,<br/>Confidence, Model, Avg%, Att%, Date
 
     Frontend-->>Teacher: Display prediction history table<br/>with color-coded badges
 ```

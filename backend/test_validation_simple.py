@@ -7,7 +7,7 @@ test_cases = [
         "name": "All marks zero",
         "data": {
             "name": "Test",
-            "age": 20,
+
             "department": "CSE",
             "semesters": [{"semester": 1, "internal_marks": 0, "university_marks": 0, "attendance": 50}]
         },
@@ -18,7 +18,7 @@ test_cases = [
         "name": "Extremely low marks",
         "data": {
             "name": "Test",
-            "age": 20,
+
             "department": "CSE",
             "semesters": [{"semester": 1, "internal_marks": 5, "university_marks": 10, "attendance": 50}]
         },
@@ -29,7 +29,7 @@ test_cases = [
         "name": "All attendance zero",
         "data": {
             "name": "Test",
-            "age": 20,
+
             "department": "CSE",
             "semesters": [{"semester": 1, "internal_marks": 200, "university_marks": 200, "attendance": 0}]
         },
@@ -40,7 +40,7 @@ test_cases = [
         "name": "High marks with zero attendance",
         "data": {
             "name": "Test",
-            "age": 20,
+
             "department": "CSE",
             "semesters": [{"semester": 1, "internal_marks": 250, "university_marks": 250, "attendance": 0}]
         },
@@ -51,7 +51,7 @@ test_cases = [
         "name": "Valid data",
         "data": {
             "name": "Test",
-            "age": 20,
+
             "department": "CSE",
             "semesters": [{"semester": 1, "internal_marks": 200, "university_marks": 210, "attendance": 85}]
         },
@@ -78,7 +78,6 @@ curl -X POST http://localhost:8000/predict \\
   -H "Authorization: Bearer YOUR_TOKEN" \\
   -d '{
     "name": "Test Student",
-    "age": 20,
     "department": "CSE",
     "semesters": [
       {"semester": 1, "internal_marks": 0, "university_marks": 0, "attendance": 50}

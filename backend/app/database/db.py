@@ -71,3 +71,7 @@ def init_db() -> None:
             conn.execute(
                 text("ALTER TABLE prediction_records ADD COLUMN avg_attendance FLOAT DEFAULT 0")
             )
+
+        # Drop the age column (no longer used as a prediction feature)
+        if "age" in existing:
+            conn.execute(text("ALTER TABLE prediction_records DROP COLUMN age"))

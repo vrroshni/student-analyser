@@ -119,7 +119,7 @@ Key API interactions:
 ### 4.2 Backend API → Predictor service
 
 - **Interface**: `PredictorService.predict(payload, model_type)`
-- **Payload**: fixed features (age + sem1..sem8 internal/university/attendance)
+- **Payload**: fixed features (sem1..sem8 internal/university/attendance)
 - **Output**:
   - prediction label
   - confidence score

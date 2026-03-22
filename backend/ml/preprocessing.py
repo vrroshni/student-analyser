@@ -7,7 +7,6 @@ import numpy as np
 
 
 FEATURES: List[str] = [
-    "age",
     *[
         f"sem{sem}_{field}"
         for sem in range(1, 9)
