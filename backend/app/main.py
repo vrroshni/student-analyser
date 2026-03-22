@@ -62,7 +62,6 @@ def _rule_score(student: StudentInput) -> float:
     score += 0.55 * avg_pct
     score += 0.25 * last_pct
     score += 0.20 * avg_att
-    score += (student.age - 20) * 0.5
     return float(score)
 
 
@@ -157,7 +156,7 @@ def _apply_rule_override(*, student: StudentInput, prediction: str, confidence: 
 
 
 def _payload_from_student(student: StudentInput) -> dict:
-    payload: dict[str, float | int] = {"age": student.age}
+    payload: dict[str, float | int] = {}
 
     # Fill sem1..sem8.
     # The model was trained on full sem1..sem8 vectors. If the user provides only a subset
@@ -316,7 +315,6 @@ def predict(
 @app.post("/predict-with-photo", response_model=PredictionOutput)
 async def predict_with_photo(
     name: str = Form(...),
-    age: int = Form(...),
     department: str = Form(...),
     semesters_json: str = Form(...),
     model_type: Literal["ml", "dl"] = Query("ml"),
@@ -329,7 +327,7 @@ async def predict_with_photo(
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Invalid semesters_json: {e}")
 
-    student = StudentInput(name=name, age=age, department=department, semesters=semesters)
+    student = StudentInput(name=name, department=department, semesters=semesters)
 
     try:
         payload = _payload_from_student(student)
@@ -401,7 +399,6 @@ def history(
             "student_id": r.student_id,
             "name": r.name,
             "department": r.department,
-            "age": r.age,
             "avg_percentage": r.avg_percentage,
             "last_percentage": r.last_percentage,
             "avg_attendance": r.avg_attendance,

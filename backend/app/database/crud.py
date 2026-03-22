@@ -32,7 +32,6 @@ def create_prediction_record(
         name=student.name,
         department=student.department,
         semesters_json=json.dumps([s.model_dump() for s in semesters]),
-        age=student.age,
         avg_percentage=avg_pct,
         last_percentage=last_pct,
         avg_attendance=avg_att,

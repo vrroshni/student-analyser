@@ -6,7 +6,7 @@
 
 **Action:**
 
-- Collect student information: Name, Age, Department
+- Collect student information: Name, Department
 - Gather semester-wise data (up to 8 semesters):
   - Internal marks (out of 300)
   - University marks (out of 300)
@@ -22,9 +22,8 @@
 
 **Action:**
 
-- Extract 25 numerical features:
-  - 1 demographic feature: `age`
-  - 24 academic features: For each semester (1-8):
+- Extract 24 numerical features:
+  - For each semester (1-8):
     - `sem{N}_internal` (internal marks)
     - `sem{N}_university` (university marks)
     - `sem{N}_attendance` (attendance %)
@@ -40,7 +39,7 @@
 
 ## 3. Normalization Phase (Feature Scaling)
 
-**Input:** 25-feature vector with raw values.
+**Input:** 24-feature vector with raw values.
 
 **Action:**
 
@@ -53,13 +52,13 @@
   - Mean = 0
   - Standard Deviation = 1
 - Ensures all features contribute equally regardless of original scale
-- Output: Normalized 25-feature vector ready for model input
+- Output: Normalized 24-feature vector ready for model input
 
 ---
 
 ## 4. Model Prediction Phase (Classification)
 
-**Input:** Normalized 25-feature vector + Model type selection (ML or DL).
+**Input:** Normalized 24-feature vector + Model type selection (ML or DL).
 
 **Action:**
 
@@ -75,7 +74,7 @@
 
 ### If Model Type = DL (Neural Network):
 - Pass scaled features through neural network:
-  - Input Layer: 25 neurons
+  - Input Layer: 24 neurons
   - Hidden Layer 1: 32 neurons (ReLU activation)
   - Hidden Layer 2: 16 neurons (ReLU activation)
   - Output Layer: 3 neurons (Softmax activation)
@@ -96,7 +95,7 @@
 
 ### For Random Forest (TreeExplainer):
 - Use SHAP TreeExplainer for exact computation
-- Calculate Shapley values for each of 25 features
+- Calculate Shapley values for each of 24 features
 - Determine how much each feature contributed to the prediction
 
 ### For Neural Network (KernelExplainer):
@@ -175,10 +174,9 @@
 ### Step 7.2: Compute Rule-Based Score
 - Calculate independent score using weighted formula:
   ```
-  score = 0.55 × avg_percentage 
-        + 0.25 × last_percentage 
-        + 0.20 × avg_attendance 
-        + (age - 20) × 0.5
+  score = 0.55 × avg_percentage
+        + 0.25 × last_percentage
+        + 0.20 × avg_attendance
   ```
 
 ### Step 7.3: Determine Rule-Based Label
@@ -211,7 +209,7 @@
 **Action:**
 
 - Create prediction record in database with:
-  - Student information (name, age, department)
+  - Student information (name, department)
   - Semester-wise data (JSON format)
   - Final prediction and confidence
   - Model used (with annotations)
@@ -269,7 +267,7 @@
 ```
 Student Data Input
     ↓
-Feature Engineering (25 features)
+Feature Engineering (24 features)
     ↓
 Normalization (StandardScaler)
     ↓

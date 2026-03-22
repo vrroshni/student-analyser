@@ -49,8 +49,6 @@ class PredictionRecord(Base):
 
     semesters_json: Mapped[Optional[str]] = mapped_column(String, nullable=True)
 
-    age: Mapped[int] = mapped_column(Integer, nullable=False)
-
     avg_percentage: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     last_percentage: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     avg_attendance: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)

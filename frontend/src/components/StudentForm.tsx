@@ -26,7 +26,6 @@ export type SemesterInput = {
 
 export type StudentInput = {
   name: string;
-  age: number;
   department: Department;
   semesters: SemesterInput[];
 };
@@ -86,7 +85,6 @@ const semesterSchema = z
 const studentSchema = z
   .object({
     name: z.string().trim().min(1).max(120),
-    age: z.number().int().min(15).max(30),
     department: z.enum(DEPARTMENTS),
     semesters: z.array(semesterSchema).min(1).max(8)
   })
@@ -107,7 +105,6 @@ const studentSchema = z
 
 const DEFAULTS: StudentInput = {
   name: "Student",
-  age: 18,
   department: "CSE",
   semesters: [
     {
@@ -204,7 +201,6 @@ export function StudentForm({ onResult, onError, onLoadingChange }: Props) {
       if (photo) {
         const form = new FormData();
         form.append("name", parsed.data.name);
-        form.append("age", String(parsed.data.age));
         form.append("department", parsed.data.department);
         form.append("semesters_json", JSON.stringify(parsed.data.semesters));
         form.append("photo", photo);
@@ -331,22 +327,6 @@ export function StudentForm({ onResult, onError, onLoadingChange }: Props) {
               />
             </div>
           ) : null}
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <div className="text-sm font-medium">Age (15-30)</div>
-            <Input
-              type="number"
-              value={values.age}
-              onChange={(e) =>
-                setValues((v) => ({ ...v, age: Number(e.target.value) }))
-              }
-            />
-            {fieldErrors["age"] ? (
-              <div className="text-xs text-destructive">{fieldErrors["age"]}</div>
-            ) : null}
-          </div>
         </div>
 
         <div className="rounded-lg border border-border/70 bg-background/40 p-4">

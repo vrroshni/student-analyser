@@ -15,7 +15,6 @@ It is meant for:
 Educational institutions often want to identify students who may need academic support early.
 
 This project predicts a student’s performance category based on:
-- Age
 - Marks for up to 8 semesters:
   - Internal marks
   - University marks
@@ -99,14 +98,13 @@ From the repo root:
 The ML/DL models use a fixed feature vector.
 
 Features (in order):
-- `age`
 - For semesters `1..8`:
   - `sem{n}_internal`
   - `sem{n}_university`
   - `sem{n}_attendance`
 
 Total features:
-- `1 + (8 * 3) = 25` features
+- `8 * 3 = 24` features
 
 ### 4.2 Labels (target classes)
 The training label is one of:
@@ -170,7 +168,7 @@ Frontend -> localStorage (access_token)
 Teacher -> Frontend form -> POST /predict?model_type=ml|dl (with JWT)
 Backend:
   - Validates JWT
-  - Prepares 25-feature vector (fills sem1..sem8)
+  - Prepares 24-feature vector (fills sem1..sem8)
   - Loads model artifacts (if not already loaded)
   - Scales input
   - Runs model predict_proba

@@ -21,7 +21,6 @@ except Exception:  # pragma: no cover
 
 
 FEATURES: List[str] = [
-    "age",
     *[
         f"sem{sem}_{field}"
         for sem in range(1, 9)

@@ -38,7 +38,7 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    A["Input: 25-Feature Vector"] --> B["Scale with StandardScaler"]
+    A["Input: 24-Feature Vector"] --> B["Scale with StandardScaler"]
     B --> C["Pass to 300 Decision Trees"]
     C --> D["Each Tree Votes\nfor a Class"]
     D --> E["Aggregate Votes\n(Majority Voting)"]
@@ -46,8 +46,8 @@ flowchart TD
     F --> G["Output: Predicted Class\n+ Confidence Score"]
 ```
 
-### Feature Input (25 Features)
-`age`, `sem1_internal`, `sem1_university`, `sem1_attendance`, `sem2_internal`, ..., `sem8_attendance`
+### Feature Input (24 Features)
+`sem1_internal`, `sem1_university`, `sem1_attendance`, `sem2_internal`, ..., `sem8_attendance`
 
 ---
 
@@ -61,7 +61,7 @@ A deep learning model using a fully-connected feed-forward architecture with ReL
 
 | Layer | Type | Units | Activation | Purpose |
 |-------|------|-------|------------|---------|
-| Input | Input | 25 | — | Accepts 25 scaled features |
+| Input | Input | 24 | — | Accepts 24 scaled features |
 | Hidden 1 | Dense | 32 | ReLU | Learn non-linear patterns |
 | Hidden 2 | Dense | 16 | ReLU | Learn higher-level representations |
 | Output | Dense | 3 | Softmax | Probability distribution over 3 classes |
@@ -81,7 +81,7 @@ A deep learning model using a fully-connected feed-forward architecture with ReL
 ```mermaid
 flowchart LR
     subgraph Input["Input Layer"]
-        I["25 Features\n(age, sem1_internal,\nsem1_university, ...)"]
+        I["24 Features\n(sem1_internal,\nsem1_university, ...)"]
     end
 
     subgraph Hidden1["Hidden Layer 1"]
@@ -115,7 +115,7 @@ flowchart TD
     A["Load Dataset\n(student_data.csv)"] --> B["Split into Train/Test\n(80/20 Stratified)"]
     B --> C["Fit StandardScaler\non Training Data"]
     C --> D["Transform Train & Test"]
-    D --> E["Build Sequential Model\n(25 → 32 → 16 → 3)"]
+    D --> E["Build Sequential Model\n(24 → 32 → 16 → 3)"]
     E --> F["Compile with Adam\n+ Sparse Categorical\nCrossentropy"]
     F --> G["Train for 30 Epochs\n(Batch Size = 32)"]
     G --> H["Validate on 20% Split"]

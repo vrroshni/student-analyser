@@ -91,7 +91,6 @@ export function PredictionResult({
 
   const providedSemesters = new Set((result.semesters ?? []).map((s) => s.semester));
   const filteredContributions = (result.feature_contributions ?? []).filter((c) => {
-    if (c.feature === "age") return true;
     const m = /^sem(\d+)_(internal|university|attendance)$/.exec(c.feature);
     if (!m) return true;
     const sem = Number(m[1]);

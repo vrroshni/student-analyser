@@ -52,7 +52,7 @@ def main():
         "Valid student data",
         {
             "name": "John Doe",
-            "age": 20,
+
             "department": "CSE",
             "semesters": [
                 {"semester": 1, "internal_marks": 200, "university_marks": 210, "attendance": 85.0}
@@ -66,7 +66,7 @@ def main():
         "All marks are zero",
         {
             "name": "Bad Student",
-            "age": 20,
+
             "department": "CSE",
             "semesters": [
                 {"semester": 1, "internal_marks": 0, "university_marks": 0, "attendance": 50.0}
@@ -80,7 +80,7 @@ def main():
         "Extremely low marks (< 5%)",
         {
             "name": "Low Marks",
-            "age": 20,
+
             "department": "CSE",
             "semesters": [
                 {"semester": 1, "internal_marks": 5, "university_marks": 10, "attendance": 50.0}
@@ -94,7 +94,7 @@ def main():
         "All attendance is zero",
         {
             "name": "No Attendance",
-            "age": 20,
+
             "department": "CSE",
             "semesters": [
                 {"semester": 1, "internal_marks": 200, "university_marks": 210, "attendance": 0.0}
@@ -108,7 +108,7 @@ def main():
         "High marks (>70%) with 0% attendance",
         {
             "name": "Suspicious",
-            "age": 20,
+
             "department": "CSE",
             "semesters": [
                 {"semester": 1, "internal_marks": 250, "university_marks": 250, "attendance": 0.0}
@@ -122,7 +122,7 @@ def main():
         "Low but acceptable marks (10%)",
         {
             "name": "Struggling Student",
-            "age": 20,
+
             "department": "CSE",
             "semesters": [
                 {"semester": 1, "internal_marks": 30, "university_marks": 30, "attendance": 40.0}
@@ -136,7 +136,7 @@ def main():
         "Marks exceed total (internal + university > 600)",
         {
             "name": "Over Limit",
-            "age": 20,
+
             "department": "CSE",
             "semesters": [
                 {"semester": 1, "internal_marks": 300, "university_marks": 301, "attendance": 85.0}
@@ -150,7 +150,7 @@ def main():
         "Duplicate semesters",
         {
             "name": "Duplicate",
-            "age": 20,
+
             "department": "CSE",
             "semesters": [
                 {"semester": 1, "internal_marks": 200, "university_marks": 210, "attendance": 85.0},
@@ -165,7 +165,7 @@ def main():
         "Multiple semesters with good data",
         {
             "name": "Good Student",
-            "age": 20,
+
             "department": "CSE",
             "semesters": [
                 {"semester": 1, "internal_marks": 200, "university_marks": 210, "attendance": 85.0},
@@ -181,7 +181,7 @@ def main():
         "Multiple semesters all with zero marks",
         {
             "name": "All Zero",
-            "age": 20,
+
             "department": "CSE",
             "semesters": [
                 {"semester": 1, "internal_marks": 0, "university_marks": 0, "attendance": 50.0},

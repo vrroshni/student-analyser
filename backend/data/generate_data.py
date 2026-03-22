@@ -11,14 +11,11 @@ INTERNAL_OUT_OF = 300
 UNIVERSITY_OUT_OF = 300
 
 
-def _label_from_rules(*, age: int, avg_pct: float, last_pct: float, avg_att: float) -> str:
+def _label_from_rules(*, avg_pct: float, last_pct: float, avg_att: float) -> str:
     score = 0.0
     score += 0.55 * avg_pct
     score += 0.25 * last_pct
     score += 0.20 * avg_att
-
-    # Small age effect
-    score += (age - 20) * 0.5
 
     if score >= 75:
         return "Good"
@@ -29,8 +26,6 @@ def _label_from_rules(*, age: int, avg_pct: float, last_pct: float, avg_att: flo
 
 def generate(n: int = 500, seed: int = 42) -> pd.DataFrame:
     rng = np.random.default_rng(seed)
-
-    age = rng.integers(15, 31, size=n)
 
     sem_internal = np.clip(rng.normal(190, 60, size=(n, 8)), 0, INTERNAL_OUT_OF)
     sem_university = np.clip(rng.normal(185, 65, size=(n, 8)), 0, UNIVERSITY_OUT_OF)
@@ -43,15 +38,14 @@ def generate(n: int = 500, seed: int = 42) -> pd.DataFrame:
 
     labels = [
         _label_from_rules(
-            age=int(a),
             avg_pct=float(ap),
             last_pct=float(lp),
             avg_att=float(aa),
         )
-        for a, ap, lp, aa in zip(age, avg_pct, last_pct, avg_att)
+        for ap, lp, aa in zip(avg_pct, last_pct, avg_att)
     ]
 
-    data: dict[str, object] = {"age": age}
+    data: dict[str, object] = {}
     for sem in range(1, 9):
         data[f"sem{sem}_internal"] = np.round(sem_internal[:, sem - 1]).astype(int)
         data[f"sem{sem}_university"] = np.round(sem_university[:, sem - 1]).astype(int)

@@ -98,9 +98,9 @@ flowchart LR
 |-------|-------------|
 | **Actor** | Teacher / Student |
 | **Precondition** | User is logged in |
-| **Main Flow** | 1. User navigates to "Predict" tab. 2. Enters student name, age (15-30), and department. 3. Adds semester data (1-8 semesters): semester number, internal marks (0-300), university marks (0-300), attendance (0-100%). 4. Can add or remove semesters as needed |
+| **Main Flow** | 1. User navigates to "Predict" tab. 2. Enters student name and department. 3. Adds semester data (1-8 semesters): semester number, internal marks (0-300), university marks (0-300), attendance (0-100%). 4. Can add or remove semesters as needed |
 | **Postcondition** | Student data is ready for prediction |
-| **Validation** | Age must be 15-30. Marks must be 0-300. Attendance must be 0-100%. At least 1 semester required |
+| **Validation** | Marks must be 0-300. Attendance must be 0-100%. At least 1 semester required |
 
 ### UC5: Upload Student Photo (Optional)
 
@@ -126,7 +126,7 @@ flowchart LR
 |-------|-------------|
 | **Actor** | Teacher / Student |
 | **Precondition** | Student data is entered (UC4) and model is selected (UC6) |
-| **Main Flow** | 1. User clicks "Predict" button. 2. System constructs 25-feature vector from student data. 3. System scales features and runs inference using selected model. 4. System computes SHAP explanations. 5. System applies rule-based override if applicable. 6. System stores prediction record in database (if requester is a student, the record is stored with `student_id` ownership). 7. Result is displayed to the user |
+| **Main Flow** | 1. User clicks "Predict" button. 2. System constructs 24-feature vector from student data. 3. System scales features and runs inference using selected model. 4. System computes SHAP explanations. 5. System applies rule-based override if applicable. 6. System stores prediction record in database (if requester is a student, the record is stored with `student_id` ownership). 7. Result is displayed to the user |
 | **Postcondition** | Prediction is generated, stored, and displayed |
 
 ### UC8: View Prediction Result
@@ -153,7 +153,7 @@ flowchart LR
 |-------|-------------|
 | **Actor** | Teacher |
 | **Precondition** | Teacher is logged in |
-| **Main Flow** | 1. Teacher clicks "History" tab. 2. System fetches past prediction records from database. 3. Displays a table with columns: Student Name, Department, Age, Prediction, Confidence, Model Used, Avg %, Attendance, Date. 4. Records are sorted by newest first |
+| **Main Flow** | 1. Teacher clicks "History" tab. 2. System fetches past prediction records from database. 3. Displays a table with columns: Student Name, Department, Prediction, Confidence, Model Used, Avg %, Attendance, Date. 4. Records are sorted by newest first |
 | **Postcondition** | Teacher can review all past predictions (including student-owned records) |
 
 ### UC12: View Own Prediction History
