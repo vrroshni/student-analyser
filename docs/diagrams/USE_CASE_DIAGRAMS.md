@@ -79,7 +79,7 @@ flowchart LR
 - **Preconditions**:
   - User is logged in
 - **Main flow**:
-  - User enters age and semester details (marks + attendance)
+  - User enters semester details (marks + attendance)
   - System validates inputs
 
 ### UC6: Select Model (ML/DL)

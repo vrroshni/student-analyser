@@ -157,7 +157,7 @@ flowchart TD
 ```
 Feature: sem8_university → Contribution: +0.35 (pushes toward "Good")
 Feature: sem1_attendance → Contribution: -0.12 (pushes away from "Good")
-Feature: age            → Contribution: +0.02 (minor positive effect)
+Feature: sem3_internal   → Contribution: +0.02 (minor positive effect)
 ```
 
 ---
@@ -180,17 +180,17 @@ Where `μ` is the mean and `σ` is the standard deviation of each feature from t
 
 | Feature | Raw Range | After Scaling |
 |---------|-----------|---------------|
-| age | 15 – 30 | ~ -1.5 to +1.5 |
 | sem_internal | 0 – 300 | ~ -3.0 to +3.0 |
+| sem_university | 0 – 300 | ~ -3.0 to +3.0 |
 | sem_attendance | 0 – 100 | ~ -2.5 to +2.5 |
 
-Without scaling, features with larger ranges (like marks 0-300) would dominate over features with smaller ranges (like age 15-30).
+Without scaling, features with larger ranges (like marks 0-300) would dominate over features with smaller ranges (like attendance 0-100).
 
 ### Scaling Flowchart
 
 ```mermaid
 flowchart LR
-    A["Raw Features\n(25 values)"] --> B["Load Fitted Scaler\n(scaler.joblib)"]
+    A["Raw Features\n(24 values)"] --> B["Load Fitted Scaler\n(scaler.joblib)"]
     B --> C["For Each Feature:\nz = (x - mean) / std"]
     C --> D["Scaled Features\n(mean=0, std=1)"]
     D --> E["Pass to ML/DL\nModel"]
@@ -207,7 +207,7 @@ After the ML/DL model produces a prediction, a rule-based system computes an ind
 ### Score Formula
 
 ```
-score = 0.55 × avg_percentage + 0.25 × last_percentage + 0.20 × avg_attendance + (age - 20) × 0.5
+score = 0.55 × avg_percentage + 0.25 × last_percentage + 0.20 × avg_attendance
 ```
 
 ### Classification Thresholds
