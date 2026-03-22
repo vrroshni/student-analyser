@@ -24,11 +24,11 @@ student_performance.db
 *.db-wal
 *.db-shm
 
-# Model artifacts
-backend/ml/models/*.joblib
-backend/ml/models/*.npy
-backend/ml/models/*.keras
-backend/ml/models/*.h5
+# Model artifacts — tracked for deployment (remove these lines if models are too large)
+# backend/ml/models/*.joblib
+# backend/ml/models/*.npy
+# backend/ml/models/*.keras
+# backend/ml/models/*.h5
 
 # Data outputs
 backend/data/*.csv

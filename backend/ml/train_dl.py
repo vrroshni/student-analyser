@@ -81,8 +81,17 @@ def main() -> None:
     with (out_dir / "dl_metrics.json").open("w", encoding="utf-8") as f:
         json.dump({"accuracy": round(acc, 4)}, f)
 
+    # Also export TFLite model for lightweight deployment
+    import tensorflow as tf
+
+    converter = tf.lite.TFLiteConverter.from_keras_model(model)
+    tflite_model = converter.convert()
+    tflite_path = out_dir / "dl_model.tflite"
+    tflite_path.write_bytes(tflite_model)
+
     print(f"DL training complete. Accuracy: {acc:.3f}")
     print(f"Saved artifacts to: {out_dir}")
+    print(f"TFLite model: {tflite_path} ({len(tflite_model)} bytes)")
 
 
 if __name__ == "__main__":

@@ -15,9 +15,9 @@ except Exception:  # pragma: no cover
     shap = None
 
 try:
-    from tensorflow import keras
+    import tflite_runtime.interpreter as tflite
 except Exception:  # pragma: no cover
-    keras = None
+    tflite = None
 
 
 FEATURES: List[str] = [
@@ -110,22 +110,24 @@ class PredictorService:
         if self._dl_loaded:
             return
 
-        if keras is None:
+        if tflite is None:
             raise ModelArtifactsNotFound(
-                "TensorFlow is not installed/available. Install backend requirements and re-try."
+                "tflite-runtime is not installed. Install backend requirements and re-try."
             )
 
-        model_path = self.models_dir / "dl_model.keras"
+        model_path = self.models_dir / "dl_model.tflite"
         scaler_path = self.models_dir / "scaler.joblib"
         label_map_path = self.models_dir / "label_map.json"
         background_path = self.models_dir / "background.npy"
 
         if not model_path.exists() or not scaler_path.exists() or not label_map_path.exists():
             raise ModelArtifactsNotFound(
-                "DL artifacts not found. Run: python backend/ml/train_dl.py"
+                "DL artifacts not found. Run: python backend/ml/train_dl.py and python backend/ml/convert_to_tflite.py"
             )
 
-        self._dl_model = keras.models.load_model(model_path)
+        interpreter = tflite.Interpreter(model_path=str(model_path))
+        interpreter.allocate_tensors()
+        self._dl_model = interpreter
         self._dl_scaler = joblib.load(scaler_path)
         self._dl_label_map = self._load_label_map(label_map_path)
         self._dl_background = self._load_background(background_path)
@@ -166,7 +168,13 @@ class PredictorService:
         x = self._vectorize(payload)
         x_scaled = self._dl_scaler.transform(x)
 
-        proba = self._dl_model.predict(x_scaled, verbose=0)[0]
+        interpreter = self._dl_model
+        input_details = interpreter.get_input_details()
+        output_details = interpreter.get_output_details()
+        interpreter.set_tensor(input_details[0]["index"], x_scaled.astype(np.float32))
+        interpreter.invoke()
+        proba = interpreter.get_tensor(output_details[0]["index"])[0]
+
         class_idx = int(np.argmax(proba))
         confidence = float(proba[class_idx])
         prediction = self._dl_label_map[class_idx]
@@ -198,24 +206,32 @@ class PredictorService:
         except Exception:
             return {f: 0.0 for f in FEATURES}
 
+    def _tflite_predict_batch(self, inputs: np.ndarray) -> np.ndarray:
+        """Run batch prediction through the TFLite interpreter."""
+        interpreter = self._dl_model
+        input_details = interpreter.get_input_details()
+        output_details = interpreter.get_output_details()
+        results = []
+        for row in inputs:
+            interpreter.set_tensor(input_details[0]["index"], row.reshape(1, -1).astype(np.float32))
+            interpreter.invoke()
+            results.append(interpreter.get_tensor(output_details[0]["index"])[0].copy())
+        return np.array(results)
+
     def _explain_dl(self, x_scaled: np.ndarray) -> Dict[str, float]:
         if shap is None or self._dl_background is None:
             return {f: 0.0 for f in FEATURES}
 
         try:
-            # KernelExplainer is slow; keep it bounded.
             background = self._dl_background
             if background.ndim == 1:
                 background = background.reshape(1, -1)
             background = background[:50]
 
-            def f(inp: np.ndarray) -> np.ndarray:
-                return self._dl_model.predict(inp, verbose=0)
-
-            explainer = shap.KernelExplainer(f, background)
+            explainer = shap.KernelExplainer(self._tflite_predict_batch, background)
             shap_vals = explainer.shap_values(x_scaled, nsamples=100)
             if isinstance(shap_vals, list):
-                proba = self._dl_model.predict(x_scaled, verbose=0)[0]
+                proba = self._tflite_predict_batch(x_scaled)[0]
                 class_idx = int(np.argmax(proba))
                 vals = shap_vals[class_idx][0]
             else:
