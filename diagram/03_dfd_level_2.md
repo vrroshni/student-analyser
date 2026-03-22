@@ -145,12 +145,12 @@ The Level 2 DFD further decomposes each Level 1 process into detailed sub-proces
         │                                          ╭──────────────────╮                     │
         │                                          │  P2.4            │                     │
         │                                          │  Build           │                     │
-        │                                          │  25-Feature      │                     │
+        │                                          │  24-Feature      │                     │
         │                                          │  Vector          │                     │
         │                                          ╰────────┬─────────╯                     │
         │                                                   │                               │
-        │                                          25-Feature Dict                          │
-        │                                          (age + 8 sem × 3)                        │
+        │                                          24-Feature Dict                          │
+        │                                          (8 sem × 3)                              │
         │                                                   │                               │
         │                                                   ▼                               │
         │        ═══════════════                   ╭──────────────────╮                     │
@@ -228,13 +228,13 @@ The Level 2 DFD further decomposes each Level 1 process into detailed sub-proces
 |-------------|-------------|
 | **P2.1** Receive Prediction Request | Receives HTTP POST at `/predict?model_type=ml` or `dl` with student data in body |
 | **P2.2** Validate JWT Token | Validates JWT token using `get_current_teacher` dependency. Extracts teacher ID from token |
-| **P2.3** Parse & Validate Student Input | Validates body against `StudentInput` schema (name, age 15–30, department, semesters list) |
-| **P2.4** Build 25-Feature Vector | Converts student input to 25 features: `age` + 8 semesters × 3 values (internal, university, attendance). Forward-fills missing semesters |
+| **P2.3** Parse & Validate Student Input | Validates body against `StudentInput` schema (name, department, semesters list) |
+| **P2.4** Build 24-Feature Vector | Converts student input to 24 features: 8 semesters × 3 values (internal, university, attendance). Forward-fills missing semesters |
 | **P2.5** Load Model Artifacts | Lazy-loads from disk (cached): `rf_model.joblib` or `dl_model.keras`, plus `scaler.joblib`, `label_map.json`, `background.npy` |
-| **P2.6** Scale Features | Applies `StandardScaler.transform()` — normalizes all 25 features to mean=0, std=1 |
+| **P2.6** Scale Features | Applies `StandardScaler.transform()` — normalizes all 24 features to mean=0, std=1 |
 | **P2.7** Run Model Inference | **ML:** `predict_proba()` → 3-class probabilities. **DL:** `model.predict()` → softmax probabilities. Picks class with max probability |
 | **P2.8** Compute SHAP Explanations | **ML:** SHAP TreeExplainer (exact). **DL:** SHAP KernelExplainer (100 samples, 50 background). Falls back to zeros on failure |
-| **P2.9** Apply Rule-Based Override | Score = `0.55×avg% + 0.25×last% + 0.20×avg_att + (age−20)×0.5`. Only upgrades label if rule predicts higher category |
+| **P2.9** Apply Rule-Based Override | Score = `0.55×avg% + 0.25×last% + 0.20×avg_att`. Only upgrades label if rule predicts higher category |
 | **P2.10** Store Prediction Record | Stores complete record in SQLite: student info, computed averages, prediction, confidence, model used |
 | **P2.11** Return Prediction Output | Returns `PredictionOutput` with record_id, prediction, confidence, model_used, feature_contributions, timestamp |
 
@@ -289,7 +289,7 @@ The Level 2 DFD further decomposes each Level 1 process into detailed sub-proces
         │                                                   ▼
         │        Array of Prediction               ╭──────────────────╮
         │        Records (JSON)                    │  P3.5            │
-        │        [name, dept, age,                 │  Return          │
+        │        [name, dept,                       │  Return          │
         └─────── prediction, confidence,   ◄───── │  History         │
                  model, avg%, att%, date]          │  Response        │
                                                    ╰──────────────────╯
@@ -305,7 +305,7 @@ The Level 2 DFD further decomposes each Level 1 process into detailed sub-proces
 | **P3.2** Validate JWT Token | Validates JWT to ensure the requester is an authenticated teacher |
 | **P3.3** Query Prediction Records | Queries `prediction_records` table: `ORDER BY created_at DESC LIMIT n` |
 | **P3.4** Serialize & Format Records | Serializes DB records to JSON, parses `semesters_json` field, formats datetime fields |
-| **P3.5** Return History Response | Returns array of records with all fields: name, department, age, prediction, confidence, model used, avg %, attendance, timestamp |
+| **P3.5** Return History Response | Returns array of records with all fields: name, department, prediction, confidence, model used, avg %, attendance, timestamp |
 
 ---
 

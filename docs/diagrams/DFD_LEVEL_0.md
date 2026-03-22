@@ -42,7 +42,7 @@ flowchart LR
 ### Data flows
 - **Teacher → System**
   - Signup/Login data
-  - Student academic details (age, sem marks, attendance)
+  - Student academic details (sem marks, attendance)
   - Model selection (ML/DL)
 - **System → Teacher**
   - JWT token (after auth)

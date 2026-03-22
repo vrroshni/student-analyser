@@ -18,7 +18,6 @@ type HistoryRecord = {
   id: number;
   name: string;
   department: string;
-  age: number;
   avg_percentage: number;
   last_percentage: number;
   avg_attendance: number;
@@ -121,7 +120,6 @@ export function HistoryList() {
                   <TableHead>Prediction</TableHead>
                   <TableHead className="text-right">Confidence</TableHead>
                   <TableHead>Model</TableHead>
-                  <TableHead className="text-right">Age</TableHead>
                   <TableHead className="text-right">Avg %</TableHead>
                   <TableHead className="text-right">Last %</TableHead>
                   <TableHead className="text-right">Avg Att%</TableHead>
@@ -161,7 +159,6 @@ export function HistoryList() {
                     </TableCell>
                     <TableCell className="text-right">{Math.round(r.confidence * 100)}%</TableCell>
                     <TableCell>{r.model_used}</TableCell>
-                    <TableCell className="text-right">{r.age}</TableCell>
                     <TableCell className="text-right">{r.avg_percentage.toFixed(1)}</TableCell>
                     <TableCell className="text-right">{r.last_percentage.toFixed(1)}</TableCell>
                     <TableCell className="text-right">{r.avg_attendance.toFixed(1)}</TableCell>

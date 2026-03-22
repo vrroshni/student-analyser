@@ -113,7 +113,7 @@ The Level 1 DFD decomposes the Student Performance Analyzer system (P0) into thr
 | 1 | Teacher/Student | P1 | Email + Password (+ Name) | User submits credentials for signup or login |
 | 2 | P1 | Teacher/Student | JWT Token / Error | Returns JWT access token on success, or error message on failure |
 | 3 | P1 | D1 | Create / Verify User Record | Creates new teacher/student record (signup) or queries existing user for password verification (login) |
-| 4 | Teacher/Student | P2 | Student Data + Model Type + JWT | Submits student data (name, age, dept, semesters) with model type (ML/DL) and authentication token |
+| 4 | Teacher/Student | P2 | Student Data + Model Type + JWT | Submits student data (name, dept, semesters) with model type (ML/DL) and authentication token |
 | 5 | P2 | Teacher/Student | Prediction + Confidence + SHAP | Returns prediction label, confidence score, model used, and per-feature SHAP contributions |
 | 6 | P2 | D1 | Store Prediction Record | Stores the complete prediction record including computed averages, prediction, and confidence |
 | 7 | D2 | P2 | Load Models + Scaler | Loads pre-trained model artifacts (Random Forest or Neural Network, StandardScaler, label map, background) |

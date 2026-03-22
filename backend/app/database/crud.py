@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.schemas import StudentInput
 
-from .models import PredictionRecord
+from .models import CsvStudent, PredictionRecord
 
 
 def create_prediction_record(
@@ -32,7 +32,6 @@ def create_prediction_record(
         name=student.name,
         department=student.department,
         semesters_json=json.dumps([s.model_dump() for s in semesters]),
-        age=student.age,
         avg_percentage=avg_pct,
         last_percentage=last_pct,
         avg_attendance=avg_att,
@@ -84,3 +83,40 @@ def set_prediction_photo(
     db.commit()
     db.refresh(record)
     return record
+
+
+def create_csv_students_batch(
+    db: Session,
+    *,
+    teacher_id: int,
+    upload_batch: str,
+    rows: List[dict],
+) -> List[CsvStudent]:
+    records = []
+    for row in rows:
+        record = CsvStudent(
+            teacher_id=teacher_id,
+            upload_batch=upload_batch,
+            name=row["name"],
+            department=row["department"],
+            semesters_json=row["semesters_json"],
+        )
+        db.add(record)
+        records.append(record)
+    db.commit()
+    for r in records:
+        db.refresh(r)
+    return records
+
+
+def list_csv_students_for_teacher(
+    db: Session,
+    *,
+    teacher_id: int,
+) -> List[CsvStudent]:
+    stmt = (
+        select(CsvStudent)
+        .where(CsvStudent.teacher_id == teacher_id)
+        .order_by(desc(CsvStudent.created_at))
+    )
+    return list(db.scalars(stmt).all())

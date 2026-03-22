@@ -30,7 +30,6 @@ erDiagram
         string name "Student name"
         string department "Student department"
         string semesters_json "JSON array of semester data"
-        int age "Student age (15-30)"
         float avg_percentage "Computed average % across semesters"
         float last_percentage "Last semester percentage"
         float avg_attendance "Average attendance across semesters"
@@ -67,7 +66,6 @@ erDiagram
 | `name` | STRING | NULLABLE | Student's name |
 | `department` | STRING | NULLABLE | Student's department |
 | `semesters_json` | STRING | NULLABLE | JSON-encoded array of semester data (internal_marks, university_marks, attendance per semester) |
-| `age` | INTEGER | NOT NULL | Student's age (15-30) |
 | `avg_percentage` | FLOAT | NULLABLE | Computed: average of (internal + university) / 600 * 100 across all semesters |
 | `last_percentage` | FLOAT | NULLABLE | Computed: last semester's (internal + university) / 600 * 100 |
 | `avg_attendance` | FLOAT | NULLABLE | Computed: average attendance percentage across all semesters |

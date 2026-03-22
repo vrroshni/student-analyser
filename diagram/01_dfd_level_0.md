@@ -105,7 +105,7 @@ The Level 0 DFD (Context Diagram) provides the highest-level overview of the Stu
 | # | From | To | Data Description |
 |---|------|----|------------------|
 | 1 | Teacher | P0 | Signup/Login credentials (email, password, name) |
-| 2 | Teacher | P0 | Student academic data (name, age, department, 8 semesters with internal marks, university marks, attendance) |
+| 2 | Teacher | P0 | Student academic data (name, department, 8 semesters with internal marks, university marks, attendance) |
 | 3 | Teacher | P0 | Model type selection (ML: Random Forest / DL: Neural Network) |
 | 4 | P0 | Teacher | JWT authentication token |
 | 5 | P0 | Teacher | Prediction label (Good / Average / Needs Attention) |

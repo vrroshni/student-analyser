@@ -23,7 +23,6 @@ def test_predict_valid_input_ml_missing_models():
         "/predict?model_type=ml",
         json={
             "name": "Alice",
-            "age": 18,
             "internal_marks": 75,
             "previous_marks": 80,
             "attendance": 85,
@@ -39,15 +38,3 @@ def test_predict_valid_input_ml_missing_models():
         assert "feature_contributions" in data
 
 
-def test_predict_invalid_age():
-    response = client.post(
-        "/predict",
-        json={
-            "name": "Bob",
-            "age": 10,
-            "internal_marks": 75,
-            "previous_marks": 80,
-            "attendance": 85,
-        },
-    )
-    assert response.status_code == 422

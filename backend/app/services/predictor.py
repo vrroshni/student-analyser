@@ -21,7 +21,6 @@ except Exception:  # pragma: no cover
 
 
 FEATURES: List[str] = [
-    "age",
     *[
         f"sem{sem}_{field}"
         for sem in range(1, 9)
@@ -39,6 +38,7 @@ class PredictionResult:
     confidence: float
     model_used: str
     contributions: Dict[str, float]
+    model_accuracy: float | None = None
 
 
 class ModelArtifactsNotFound(Exception):
@@ -58,11 +58,13 @@ class PredictorService:
         self._ml_scaler = None
         self._ml_label_map: Dict[int, str] | None = None
         self._ml_background: np.ndarray | None = None
+        self._ml_accuracy: float | None = None
 
         self._dl_model = None
         self._dl_scaler = None
         self._dl_label_map: Dict[int, str] | None = None
         self._dl_background: np.ndarray | None = None
+        self._dl_accuracy: float | None = None
 
     def _load_label_map(self, path: Path) -> Dict[int, str]:
         with path.open("r", encoding="utf-8") as f:
@@ -73,6 +75,16 @@ class PredictorService:
         if not path.exists():
             return None
         return np.load(path)
+
+    def _load_accuracy(self, path: Path) -> float | None:
+        if not path.exists():
+            return None
+        try:
+            with path.open("r", encoding="utf-8") as f:
+                data = json.load(f)
+            return float(data.get("accuracy", 0))
+        except Exception:
+            return None
 
     def _ensure_ml_loaded(self) -> None:
         if self._ml_loaded:
@@ -91,6 +103,7 @@ class PredictorService:
         self._ml_scaler = joblib.load(scaler_path)
         self._ml_label_map = self._load_label_map(label_map_path)
         self._ml_background = self._load_background(background_path)
+        self._ml_accuracy = self._load_accuracy(self.models_dir / "ml_metrics.json")
         self._ml_loaded = True
 
     def _ensure_dl_loaded(self) -> None:
@@ -116,6 +129,7 @@ class PredictorService:
         self._dl_scaler = joblib.load(scaler_path)
         self._dl_label_map = self._load_label_map(label_map_path)
         self._dl_background = self._load_background(background_path)
+        self._dl_accuracy = self._load_accuracy(self.models_dir / "dl_metrics.json")
         self._dl_loaded = True
 
     def _vectorize(self, payload: Dict[str, float | int]) -> np.ndarray:
@@ -145,6 +159,7 @@ class PredictorService:
             confidence=confidence,
             model_used="Random Forest",
             contributions=contribs,
+            model_accuracy=self._ml_accuracy,
         )
 
     def _predict_dl(self, payload: Dict[str, float | int]) -> PredictionResult:
@@ -162,6 +177,7 @@ class PredictorService:
             confidence=confidence,
             model_used="Neural Network",
             contributions=contribs,
+            model_accuracy=self._dl_accuracy,
         )
 
     def _explain_ml(self, x_scaled: np.ndarray) -> Dict[str, float]:
