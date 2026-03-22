@@ -1,4 +1,4 @@
-# Student Performance Analyzer
+# Edu Predict
 
 End-to-end local project:
 

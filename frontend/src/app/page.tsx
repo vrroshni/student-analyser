@@ -60,7 +60,7 @@ export default function Page() {
       <div className="mx-auto max-w-7xl px-4 pb-10 pt-8">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <div className="text-xl font-bold tracking-tight">Student Performance Analyzer</div>
+            <div className="text-xl font-bold tracking-tight">Edu Predict</div>
             <div className="mt-1 text-sm text-muted-foreground">
               FastAPI + Scikit-learn + TensorFlow (optional) + SHAP + SQLite
             </div>

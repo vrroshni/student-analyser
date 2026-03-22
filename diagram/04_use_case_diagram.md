@@ -2,7 +2,7 @@
 
 ## Description
 
-The Use Case Diagram shows all interactions between the Teacher and Student actors and the Student Performance Analyzer system. It identifies use cases covering authentication, data entry, prediction, and history review, including role-based access to prediction history.
+The Use Case Diagram shows all interactions between the Teacher and Student actors and the Edu Predict system. It identifies use cases covering authentication, data entry, prediction, and history review, including role-based access to prediction history.
 
 ## Diagram
 
@@ -11,7 +11,7 @@ flowchart LR
     Teacher["<b>Teacher</b>\n(Actor)"]
     Student["<b>Student</b>\n(Actor)"]
 
-    subgraph System["Student Performance Analyzer"]
+    subgraph System["Edu Predict"]
         UC1(["UC1: Sign Up"])
         UC2(["UC2: Log In"])
         UC3(["UC3: Log Out"])

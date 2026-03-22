@@ -2,7 +2,7 @@
 
 ## Description
 
-The Student Performance Analyzer follows a 4-tier architecture: Presentation Layer (browser), Application Layer (API server), ML/DL Engine, and Data Layer. This document shows how these tiers interact and the technologies used at each level.
+The Edu Predict follows a 4-tier architecture: Presentation Layer (browser), Application Layer (API server), ML/DL Engine, and Data Layer. This document shows how these tiers interact and the technologies used at each level.
 
 ## Architecture Diagram
 

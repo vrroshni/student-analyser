@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Student Performance Analyzer",
+  title: "Edu Predict",
   description: "Predict student performance with ML/DL and explainability"
 };
 

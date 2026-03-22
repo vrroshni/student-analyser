@@ -39,7 +39,7 @@ from app.services.predictor import ModelArtifactsNotFound, PredictorService
 
 
 app = FastAPI(
-    title="Student Performance Analyzer",
+    title="Edu Predict",
     description="API for predicting student performance",
     version="1.0.0",
 )
@@ -218,7 +218,7 @@ def _startup() -> None:
 
 @app.get("/")
 def read_root() -> dict:
-    return {"message": "Welcome to Student Performance Analyzer!"}
+    return {"message": "Welcome to Edu Predict!"}
 
 
 @app.get("/health")

@@ -1,4 +1,4 @@
-# Module-wise Split Explanation — Student Performance Analyzer
+# Module-wise Split Explanation — Edu Predict
 
 This document explains the project **module by module**, including what each module does, how it interacts with other modules, and what to say during demo/viva.
 

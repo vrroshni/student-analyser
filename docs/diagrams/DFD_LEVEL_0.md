@@ -10,7 +10,7 @@ This is the **Level 0 DFD** (also called the **Context Diagram**). It shows the 
 flowchart LR
   Teacher[External Entity: Teacher]
 
-  System((Process P0: Student Performance Analyzer System))
+  System((Process P0: Edu Predict System))
 
   DB[(Data Store: SQLite Database\nstudent_performance.db)]
   Models[(Data Store: Model Artifacts\nbackend/ml/models)]
@@ -30,7 +30,7 @@ flowchart LR
 - **Teacher** (person using the web application)
 
 ### Process
-- **P0: Student Performance Analyzer System**
+- **P0: Edu Predict System**
   - UI (frontend) + API (backend) together are treated as one system at Level 0
 
 ### Data stores

@@ -2,7 +2,7 @@
 
 ## Description
 
-The Student Performance Analyzer employs multiple algorithms for prediction, explainability, preprocessing, and decision-making. This document describes each algorithm with its configuration, purpose, and flowchart.
+The Edu Predict employs multiple algorithms for prediction, explainability, preprocessing, and decision-making. This document describes each algorithm with its configuration, purpose, and flowchart.
 
 ---
 

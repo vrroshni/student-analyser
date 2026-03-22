@@ -2,7 +2,7 @@
 
 ## Description
 
-The Student Performance Analyzer is organized into distinct modules, each with a specific responsibility. This document shows the module architecture, dependencies between modules, and the internal structure of the backend.
+The Edu Predict is organized into distinct modules, each with a specific responsibility. This document shows the module architecture, dependencies between modules, and the internal structure of the backend.
 
 ---
 

@@ -14,7 +14,7 @@ flowchart TB
   Teacher[External Entity: Teacher]
   Student[External Entity: Student]
 
-  subgraph System[Student Performance Analyzer System]
+  subgraph System[Edu Predict System]
     P1((P1: Authentication))
     P2((P2: Prediction Service))
     P3((P3: History Service))

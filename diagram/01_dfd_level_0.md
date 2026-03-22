@@ -2,7 +2,7 @@
 
 ## Description
 
-The Level 0 DFD (Context Diagram) provides the highest-level overview of the Student Performance Analyzer system. It shows the system as a single process, the external entity (Teacher) that interacts with it, and the data stores it depends on.
+The Level 0 DFD (Context Diagram) provides the highest-level overview of the Edu Predict system. It shows the system as a single process, the external entity (Teacher) that interacts with it, and the data stores it depends on.
 
 ---
 
@@ -29,7 +29,7 @@ The Level 0 DFD (Context Diagram) provides the highest-level overview of the Stu
 ## Level 0 DFD — Context Diagram
 
 ```
-                          Student Performance Analyzer — Level 0 DFD
+                          Edu Predict — Level 0 DFD
 
 
      ┌───────────┐         Signup / Login              ╭─────────────────────────╮
@@ -91,7 +91,7 @@ The Level 0 DFD (Context Diagram) provides the highest-level overview of the Stu
 
 | Symbol | Process | Description |
 |--------|---------|-------------|
-| Circle/Oval | **P0: Student Performance Analyzer System** | The entire application — accepts student data, runs ML/DL inference, and returns performance predictions with explanations |
+| Circle/Oval | **P0: Edu Predict System** | The entire application — accepts student data, runs ML/DL inference, and returns performance predictions with explanations |
 
 ### Data Stores
 

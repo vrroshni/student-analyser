@@ -1,13 +1,13 @@
 # Use Case Diagrams
 
-This file contains the **Use Case diagrams** for the Student Performance Analyzer.
+This file contains the **Use Case diagrams** for the Edu Predict.
 
 Actors:
 - **Teacher** (primary)
 - **Student**
 
 System:
-- **Student Performance Analyzer Web App**
+- **Edu Predict Web App**
 
 ---
 
@@ -18,7 +18,7 @@ flowchart LR
   Teacher[Actor: Teacher]
   Student[Actor: Student]
 
-  subgraph System[Student Performance Analyzer]
+  subgraph System[Edu Predict]
     UC1((Sign Up))
     UC2((Log In))
     UC3((Log Out))
@@ -135,7 +135,7 @@ If you prefer PlantUML (easy to export as image in many tools), use this:
 left to right direction
 actor Teacher
 actor Student
-rectangle "Student Performance Analyzer" {
+rectangle "Edu Predict" {
   usecase "Sign Up" as UC1
   usecase "Log In" as UC2
   usecase "Log Out" as UC3

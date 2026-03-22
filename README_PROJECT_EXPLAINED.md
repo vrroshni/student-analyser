@@ -1,4 +1,4 @@
-# Student Performance Analyzer — Full Project Documentation (Viva/College)
+# Edu Predict — Full Project Documentation (Viva/College)
 
 This document explains the **entire project** end-to-end for someone who has never seen it before.
 

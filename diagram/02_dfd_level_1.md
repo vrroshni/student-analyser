@@ -2,7 +2,7 @@
 
 ## Description
 
-The Level 1 DFD decomposes the Student Performance Analyzer system (P0) into three major sub-processes: Authentication (P1), Prediction Engine (P2), and History Service (P3). It shows how data flows between the teacher and student actors, each process, and the data stores.
+The Level 1 DFD decomposes the Edu Predict system (P0) into three major sub-processes: Authentication (P1), Prediction Engine (P2), and History Service (P3). It shows how data flows between the teacher and student actors, each process, and the data stores.
 
 ---
 
@@ -29,7 +29,7 @@ The Level 1 DFD decomposes the Student Performance Analyzer system (P0) into thr
 ## Level 1 DFD
 
 ```
-                            Student Performance Analyzer — Level 1 DFD
+                            Edu Predict — Level 1 DFD
 
 
                                                   Email + Password

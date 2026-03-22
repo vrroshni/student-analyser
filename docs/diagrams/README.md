@@ -1,6 +1,6 @@
 # Diagrams (DFD + Use Cases)
 
-This folder contains Markdown versions of the diagrams used to explain the **Student Performance Analyzer**.
+This folder contains Markdown versions of the diagrams used to explain the **Edu Predict**.
 
 ## Data Flow Diagrams (DFD)
 

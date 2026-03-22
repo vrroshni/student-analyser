@@ -1,6 +1,6 @@
-# Student Performance Analyzer — Diagrams & Documentation
+# Edu Predict — Diagrams & Documentation
 
-This folder contains all diagrams and documentation for the Student Performance Analyzer project, created for college project submission and PPT preparation.
+This folder contains all diagrams and documentation for the Edu Predict project, created for college project submission and PPT preparation.
 
 ## Diagrams Index
 

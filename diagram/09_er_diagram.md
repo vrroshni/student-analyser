@@ -2,7 +2,7 @@
 
 ## Description
 
-The ER Diagram shows the database schema of the Student Performance Analyzer. The system uses SQLite with three tables: `teachers` (teacher authentication), `students` (student authentication), and `prediction_records` (prediction results and history). Prediction records may optionally be owned by a student via `student_id`.
+The ER Diagram shows the database schema of the Edu Predict. The system uses SQLite with three tables: `teachers` (teacher authentication), `students` (student authentication), and `prediction_records` (prediction results and history). Prediction records may optionally be owned by a student via `student_id`.
 
 ## ER Diagram
 

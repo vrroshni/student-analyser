@@ -1,6 +1,6 @@
-# Module Design — Student Performance Analyzer
+# Module Design — Edu Predict
 
-This document describes the **module design** of the Student Performance Analyzer project: module boundaries, responsibilities, interfaces, and dependencies.
+This document describes the **module design** of the Edu Predict project: module boundaries, responsibilities, interfaces, and dependencies.
 
 ---
 
