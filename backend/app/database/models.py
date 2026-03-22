@@ -62,3 +62,20 @@ class PredictionRecord(Base):
     photo_filename: Mapped[Optional[str]] = mapped_column(String, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+
+
+class CsvStudent(Base):
+    __tablename__ = "csv_students"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    teacher_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("teachers.id"),
+        nullable=False,
+        index=True,
+    )
+    upload_batch: Mapped[str] = mapped_column(String, nullable=False)
+    name: Mapped[str] = mapped_column(String, nullable=False)
+    department: Mapped[str] = mapped_column(String, nullable=False)
+    semesters_json: Mapped[str] = mapped_column(String, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)

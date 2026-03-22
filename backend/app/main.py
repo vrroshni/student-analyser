@@ -1,18 +1,20 @@
 from __future__ import annotations
 
 import json
+import uuid
 import warnings
 from typing import Generator, List, Literal, Optional
 
 from fastapi import Depends, FastAPI, File, Form, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import Response
+from fastapi.responses import Response, StreamingResponse
 from sqlalchemy.orm import Session
 
 from app.auth import AuthPrincipal, create_access_token, get_current_teacher, hash_password, require_principal, verify_password
-from app.database.crud import create_prediction_record, list_prediction_records, list_prediction_records_for_student, set_prediction_photo
+from app.database.crud import create_csv_students_batch, create_prediction_record, list_csv_students_for_teacher, list_prediction_records, list_prediction_records_for_student, set_prediction_photo
 from app.database.db import SessionLocal, init_db
 from app.database.models import Student, Teacher
+from app.services.csv_processor import generate_template_csv, validate_and_parse_csv
 from app.schemas import (
     FeatureContribution,
     PredictionOutput,
@@ -309,6 +311,7 @@ def predict(
             )
             for f in list(payload.keys())
         ],
+        model_accuracy=result.model_accuracy,
     )
 
 
@@ -380,6 +383,82 @@ async def predict_with_photo(
             )
             for f in list(payload.keys())
         ],
+        model_accuracy=result.model_accuracy,
+    )
+
+
+@app.post("/csv/upload")
+async def upload_csv(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    teacher: Teacher = Depends(get_current_teacher),
+) -> dict:
+    if not file.filename or not file.filename.lower().endswith(".csv"):
+        raise HTTPException(status_code=400, detail="File must be a .csv file")
+
+    content = await file.read()
+    parsed_rows, errors = validate_and_parse_csv(content)
+
+    if errors:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "message": f"CSV validation failed: {len(errors)} error(s) found",
+                "errors": errors,
+            },
+        )
+
+    batch_id = str(uuid.uuid4())
+    records = create_csv_students_batch(
+        db,
+        teacher_id=teacher.id,
+        upload_batch=batch_id,
+        rows=parsed_rows,
+    )
+
+    return {
+        "count": len(records),
+        "upload_batch": batch_id,
+        "students": [
+            {
+                "id": r.id,
+                "name": r.name,
+                "department": r.department,
+                "semesters": json.loads(r.semesters_json),
+                "upload_batch": r.upload_batch,
+                "created_at": r.created_at.isoformat(),
+            }
+            for r in records
+        ],
+    }
+
+
+@app.get("/csv/students")
+def list_csv_students(
+    db: Session = Depends(get_db),
+    teacher: Teacher = Depends(get_current_teacher),
+) -> List[dict]:
+    records = list_csv_students_for_teacher(db, teacher_id=teacher.id)
+    return [
+        {
+            "id": r.id,
+            "name": r.name,
+            "department": r.department,
+            "semesters": json.loads(r.semesters_json),
+            "upload_batch": r.upload_batch,
+            "created_at": r.created_at.isoformat(),
+        }
+        for r in records
+    ]
+
+
+@app.get("/csv/template")
+def download_csv_template() -> StreamingResponse:
+    csv_content = generate_template_csv()
+    return StreamingResponse(
+        iter([csv_content]),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=student_template.csv"},
     )
 
 

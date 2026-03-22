@@ -57,6 +57,9 @@ def main() -> None:
     bg = X_train_scaled[:200]
     np.save(out_dir / "background.npy", bg)
 
+    with (out_dir / "ml_metrics.json").open("w", encoding="utf-8") as f:
+        json.dump({"accuracy": round(acc, 4)}, f)
+
     print(f"ML training complete. Accuracy: {acc:.3f}")
     print(f"Saved artifacts to: {out_dir}")
 

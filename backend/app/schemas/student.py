@@ -92,6 +92,7 @@ class PredictionOutput(BaseModel):
     confidence: float = Field(..., ge=0, le=1)
     model_used: str
     feature_contributions: List[FeatureContribution]
+    model_accuracy: Optional[float] = None
     timestamp: datetime = Field(default_factory=datetime.utcnow)
 
     model_config = {

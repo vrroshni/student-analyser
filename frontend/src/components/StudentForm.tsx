@@ -46,10 +46,21 @@ export type PredictionOutput = {
   confidence: number;
   model_used: string;
   feature_contributions: FeatureContribution[];
+  model_accuracy?: number | null;
   timestamp: string;
 };
 
+type CsvStudentData = {
+  id: number;
+  name: string;
+  department: string;
+  semesters: SemesterInput[];
+  upload_batch: string;
+  created_at: string;
+};
+
 type Props = {
+  userRole?: "teacher" | "student" | null;
   onResult: (r: PredictionOutput) => void;
   onError: (msg: string) => void;
   onLoadingChange?: (loading: boolean) => void;
@@ -116,7 +127,7 @@ const DEFAULTS: StudentInput = {
   ]
 };
 
-export function StudentForm({ onResult, onError, onLoadingChange }: Props) {
+export function StudentForm({ userRole, onResult, onError, onLoadingChange }: Props) {
   const [modelType, setModelType] = useState<ModelType>("ml");
   const [loading, setLoading] = useState(false);
   const [values, setValues] = useState<StudentInput>(DEFAULTS);
@@ -124,6 +135,12 @@ export function StudentForm({ onResult, onError, onLoadingChange }: Props) {
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string>("");
 
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  // CSV upload state (teacher only)
+  const [entryMode, setEntryMode] = useState<"manual" | "csv">("manual");
+  const [csvStudents, setCsvStudents] = useState<CsvStudentData[]>([]);
+  const [csvUploading, setCsvUploading] = useState(false);
+  const [csvError, setCsvError] = useState<string>("");
 
   const computed = useMemo(() => {
     const sems = values.semesters;
@@ -176,6 +193,71 @@ export function StudentForm({ onResult, onError, onLoadingChange }: Props) {
       next.splice(index, 1);
       return { ...v, semesters: next.length ? next : v.semesters };
     });
+  }
+
+  // Fetch previously uploaded CSV students on mount (teacher only)
+  useEffect(() => {
+    if (userRole !== "teacher") return;
+    api
+      .get<CsvStudentData[]>("/csv/students")
+      .then((res) => {
+        if (res.data.length > 0) setCsvStudents(res.data);
+      })
+      .catch(() => {});
+  }, [userRole]);
+
+  async function handleCsvUpload(file: File) {
+    setCsvUploading(true);
+    setCsvError("");
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const res = await api.post<{ count: number; students: CsvStudentData[] }>(
+        "/csv/upload",
+        form,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      );
+      setCsvStudents(res.data.students);
+    } catch (e: any) {
+      const detail = e?.response?.data?.detail;
+      if (detail && typeof detail === "object" && detail.errors) {
+        const lines = (detail.errors as { row: number; field: string; message: string }[]).map(
+          (err) => `Row ${err.row}: [${err.field}] ${err.message}`
+        );
+        setCsvError(`${detail.message}\n${lines.join("\n")}`);
+      } else if (typeof detail === "string") {
+        setCsvError(detail);
+      } else {
+        setCsvError("Failed to upload CSV file.");
+      }
+    } finally {
+      setCsvUploading(false);
+    }
+  }
+
+  function handleStudentSelect(studentId: number) {
+    const student = csvStudents.find((s) => s.id === studentId);
+    if (!student) return;
+    setValues({
+      name: student.name,
+      department: (DEPARTMENTS.includes(student.department as Department)
+        ? student.department
+        : "CSE") as Department,
+      semesters: student.semesters.map((s) => ({
+        semester: s.semester,
+        internal_marks: s.internal_marks,
+        university_marks: s.university_marks,
+        attendance: s.attendance,
+      })),
+    });
+    setPhoto(null);
+    setPhotoPreviewUrl("");
+    setFieldErrors({});
+    onError("");
+  }
+
+  function downloadTemplate() {
+    window.open("http://localhost:8000/csv/template", "_blank");
   }
 
   async function submit() {
@@ -263,6 +345,88 @@ export function StudentForm({ onResult, onError, onLoadingChange }: Props) {
         <CardDescription>Enter details and get a predicted category with explanations.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        {userRole === "teacher" && (
+          <div className="flex gap-1 rounded-lg border border-border/70 p-1">
+            <button
+              type="button"
+              className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                entryMode === "manual"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+              onClick={() => setEntryMode("manual")}
+            >
+              Manual Entry
+            </button>
+            <button
+              type="button"
+              className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                entryMode === "csv"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+              onClick={() => setEntryMode("csv")}
+            >
+              Upload CSV
+            </button>
+          </div>
+        )}
+
+        {entryMode === "csv" && userRole === "teacher" && (
+          <div className="space-y-3 rounded-lg border border-border/70 bg-background/40 p-4">
+            <div className="flex items-center justify-between">
+              <div className="text-sm font-semibold">Upload Student Data (CSV)</div>
+              <Button type="button" variant="outline" size="sm" onClick={downloadTemplate}>
+                Download Template
+              </Button>
+            </div>
+
+            <input
+              type="file"
+              accept=".csv"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) handleCsvUpload(f);
+              }}
+              className="block w-full text-sm text-muted-foreground file:mr-4 file:rounded-md file:border file:border-input file:bg-background file:px-3 file:py-2 file:text-sm file:font-medium file:text-foreground hover:file:bg-accent"
+            />
+
+            {csvUploading && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Uploading...
+              </div>
+            )}
+
+            {csvError && (
+              <div className="whitespace-pre-wrap rounded-lg border border-destructive/50 bg-destructive/10 px-4 py-3 text-xs">
+                {csvError}
+              </div>
+            )}
+
+            {csvStudents.length > 0 && (
+              <div className="space-y-2">
+                <div className="text-sm font-medium">Select a student to pre-fill the form</div>
+                <select
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  defaultValue=""
+                  onChange={(e) => {
+                    const id = Number(e.target.value);
+                    if (id) handleStudentSelect(id);
+                  }}
+                >
+                  <option value="">-- Choose a student --</option>
+                  {csvStudents.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name} ({s.department})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="space-y-2">
           <div className="text-sm font-medium">Student name</div>
           <Input
