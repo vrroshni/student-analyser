@@ -46,3 +46,25 @@ api.interceptors.response.use(
     return Promise.reject(err);
   }
 );
+
+// OTP helpers
+
+export type OTPSentResponse = { message: string; email: string };
+export type TokenResponse = { access_token: string; token_type: string };
+
+export async function verifyOTP(data: {
+  email: string;
+  otp_code: string;
+  purpose: string;
+  role: string;
+}) {
+  return api.post<TokenResponse>("/auth/verify-otp", data);
+}
+
+export async function resendOTP(data: {
+  email: string;
+  purpose: string;
+  role: string;
+}) {
+  return api.post<OTPSentResponse>("/auth/resend-otp", data);
+}

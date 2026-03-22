@@ -1,8 +1,13 @@
 from __future__ import annotations
 
 import json
+import os
 import uuid
 import warnings
+
+from dotenv import load_dotenv
+
+load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
 from typing import Generator, List, Literal, Optional
 
 from fastapi import Depends, FastAPI, File, Form, HTTPException, Query, UploadFile
@@ -14,10 +19,15 @@ from app.auth import AuthPrincipal, create_access_token, get_current_teacher, ha
 from app.database.crud import create_csv_students_batch, create_prediction_record, list_csv_students_for_teacher, list_prediction_records, list_prediction_records_for_student, set_prediction_photo
 from app.database.db import SessionLocal, init_db
 from app.database.models import Student, Teacher
+from app.email import send_otp_email
+from app.otp import can_resend_otp, cleanup_expired_otps, create_otp_record, verify_otp
 from app.services.csv_processor import generate_template_csv, validate_and_parse_csv
 from app.schemas import (
     FeatureContribution,
+    OTPSentResponse,
+    OTPVerifyRequest,
     PredictionOutput,
+    ResendOTPRequest,
     StudentInput,
     StudentLogin,
     StudentSignup,
@@ -195,6 +205,11 @@ def _startup() -> None:
         message=r"urllib3 v2 only supports OpenSSL.*",
     )
     init_db()
+    db = SessionLocal()
+    try:
+        cleanup_expired_otps(db)
+    finally:
+        db.close()
 
 
 @app.get("/")
@@ -207,62 +222,121 @@ def health_check() -> dict:
     return {"status": "healthy"}
 
 
-@app.post("/auth/signup", response_model=TokenResponse)
-def teacher_signup(payload: TeacherSignup, db: Session = Depends(get_db)) -> TokenResponse:
-    existing = db.query(Teacher).filter(Teacher.email == payload.email.lower().strip()).first()
+@app.post("/auth/signup", response_model=OTPSentResponse)
+async def teacher_signup(payload: TeacherSignup, db: Session = Depends(get_db)) -> OTPSentResponse:
+    email = payload.email.lower().strip()
+    existing = db.query(Teacher).filter(Teacher.email == email).first()
     if existing is not None:
         raise HTTPException(status_code=400, detail="Email already registered")
 
-    teacher = Teacher(
-        email=payload.email.lower().strip(),
-        password_hash=hash_password(payload.password),
-        name=(payload.name or "").strip(),
-    )
-    db.add(teacher)
-    db.commit()
-    db.refresh(teacher)
-
-    token = create_access_token(role="teacher", subject_id=teacher.id)
-    return TokenResponse(access_token=token)
+    payload_data = json.dumps({
+        "password_hash": hash_password(payload.password),
+        "name": (payload.name or "").strip(),
+    })
+    otp_record = create_otp_record(db, email=email, purpose="signup", role="teacher", payload_json=payload_data)
+    await send_otp_email(email, otp_record.otp_code)
+    return OTPSentResponse(email=email)
 
 
-@app.post("/auth/login", response_model=TokenResponse)
-def teacher_login(payload: TeacherLogin, db: Session = Depends(get_db)) -> TokenResponse:
-    teacher = db.query(Teacher).filter(Teacher.email == payload.email.lower().strip()).first()
-    if teacher is None or not verify_password(payload.password, teacher.password_hash):
-        raise HTTPException(status_code=401, detail="Invalid email or password")
+@app.post("/auth/login", response_model=OTPSentResponse)
+async def teacher_login(payload: TeacherLogin, db: Session = Depends(get_db)) -> OTPSentResponse:
+    email = payload.email.lower().strip()
+    teacher = db.query(Teacher).filter(Teacher.email == email).first()
+    if teacher is None:
+        raise HTTPException(status_code=401, detail="No account found with this email")
 
-    token = create_access_token(role="teacher", subject_id=teacher.id)
-    return TokenResponse(access_token=token)
+    otp_record = create_otp_record(db, email=email, purpose="login", role="teacher")
+    await send_otp_email(email, otp_record.otp_code)
+    return OTPSentResponse(email=email)
 
 
-@app.post("/auth/student/signup", response_model=TokenResponse)
-def student_signup(payload: StudentSignup, db: Session = Depends(get_db)) -> TokenResponse:
-    existing = db.query(Student).filter(Student.email == payload.email.lower().strip()).first()
+@app.post("/auth/student/signup", response_model=OTPSentResponse)
+async def student_signup(payload: StudentSignup, db: Session = Depends(get_db)) -> OTPSentResponse:
+    email = payload.email.lower().strip()
+    existing = db.query(Student).filter(Student.email == email).first()
     if existing is not None:
         raise HTTPException(status_code=400, detail="Email already registered")
 
-    student = Student(
+    payload_data = json.dumps({
+        "password_hash": hash_password(payload.password),
+        "name": (payload.name or "").strip(),
+    })
+    otp_record = create_otp_record(db, email=email, purpose="signup", role="student", payload_json=payload_data)
+    await send_otp_email(email, otp_record.otp_code)
+    return OTPSentResponse(email=email)
+
+
+@app.post("/auth/student/login", response_model=OTPSentResponse)
+async def student_login(payload: StudentLogin, db: Session = Depends(get_db)) -> OTPSentResponse:
+    email = payload.email.lower().strip()
+    student = db.query(Student).filter(Student.email == email).first()
+    if student is None:
+        raise HTTPException(status_code=401, detail="No account found with this email")
+
+    otp_record = create_otp_record(db, email=email, purpose="login", role="student")
+    await send_otp_email(email, otp_record.otp_code)
+    return OTPSentResponse(email=email)
+
+
+@app.post("/auth/verify-otp", response_model=TokenResponse)
+def verify_otp_route(payload: OTPVerifyRequest, db: Session = Depends(get_db)) -> TokenResponse:
+    record = verify_otp(
+        db,
         email=payload.email.lower().strip(),
-        password_hash=hash_password(payload.password),
-        name=(payload.name or "").strip(),
+        otp_code=payload.otp_code,
+        purpose=payload.purpose,
+        role=payload.role,
     )
-    db.add(student)
-    db.commit()
-    db.refresh(student)
+    if record is None:
+        raise HTTPException(status_code=400, detail="Invalid or expired OTP. Please request a new one.")
 
-    token = create_access_token(role="student", subject_id=student.id)
+    email = record.email
+
+    if record.purpose == "signup":
+        data = json.loads(record.payload_json or "{}")
+        if record.role == "teacher":
+            # Check again in case of race condition
+            if db.query(Teacher).filter(Teacher.email == email).first() is not None:
+                raise HTTPException(status_code=400, detail="Email already registered")
+            user = Teacher(email=email, password_hash=data["password_hash"], name=data.get("name", ""))
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+            token = create_access_token(role="teacher", subject_id=user.id)
+        else:
+            if db.query(Student).filter(Student.email == email).first() is not None:
+                raise HTTPException(status_code=400, detail="Email already registered")
+            user = Student(email=email, password_hash=data["password_hash"], name=data.get("name", ""))
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+            token = create_access_token(role="student", subject_id=user.id)
+    else:
+        # Login — user already exists
+        if record.role == "teacher":
+            teacher = db.query(Teacher).filter(Teacher.email == email).first()
+            if teacher is None:
+                raise HTTPException(status_code=400, detail="Account not found")
+            token = create_access_token(role="teacher", subject_id=teacher.id)
+        else:
+            student = db.query(Student).filter(Student.email == email).first()
+            if student is None:
+                raise HTTPException(status_code=400, detail="Account not found")
+            token = create_access_token(role="student", subject_id=student.id)
+
     return TokenResponse(access_token=token)
 
 
-@app.post("/auth/student/login", response_model=TokenResponse)
-def student_login(payload: StudentLogin, db: Session = Depends(get_db)) -> TokenResponse:
-    student = db.query(Student).filter(Student.email == payload.email.lower().strip()).first()
-    if student is None or not verify_password(payload.password, student.password_hash):
-        raise HTTPException(status_code=401, detail="Invalid email or password")
+@app.post("/auth/resend-otp", response_model=OTPSentResponse)
+async def resend_otp_route(payload: ResendOTPRequest, db: Session = Depends(get_db)) -> OTPSentResponse:
+    email = payload.email.lower().strip()
 
-    token = create_access_token(role="student", subject_id=student.id)
-    return TokenResponse(access_token=token)
+    if not can_resend_otp(db, email=email, purpose=payload.purpose, role=payload.role):
+        raise HTTPException(status_code=429, detail="Please wait before requesting a new code")
+
+    otp_record = create_otp_record(db, email=email, purpose=payload.purpose, role=payload.role)
+    await send_otp_email(email, otp_record.otp_code)
+    return OTPSentResponse(email=email)
 
 
 @app.post("/predict", response_model=PredictionOutput)

@@ -64,6 +64,20 @@ class PredictionRecord(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 
 
+class OTPRecord(Base):
+    __tablename__ = "otp_records"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    email: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    otp_code: Mapped[str] = mapped_column(String(6), nullable=False)
+    purpose: Mapped[str] = mapped_column(String, nullable=False)  # "signup" or "login"
+    role: Mapped[str] = mapped_column(String, nullable=False)  # "teacher" or "student"
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    verified: Mapped[bool] = mapped_column(Integer, default=False, nullable=False)
+    payload_json: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+
+
 class CsvStudent(Base):
     __tablename__ = "csv_students"
 

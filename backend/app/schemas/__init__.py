@@ -1,5 +1,14 @@
-from .auth import StudentLogin, StudentSignup, TeacherLogin, TeacherSignup, TokenResponse
-from .student import StudentInput, PredictionOutput, FeatureContribution
+from .auth import (
+    OTPSentResponse,
+    OTPVerifyRequest,
+    ResendOTPRequest,
+    StudentLogin,
+    StudentSignup,
+    TeacherLogin,
+    TeacherSignup,
+    TokenResponse,
+)
+from .student import FeatureContribution, PredictionOutput, StudentInput
 
 __all__ = [
     "StudentInput",
@@ -10,4 +19,7 @@ __all__ = [
     "StudentSignup",
     "StudentLogin",
     "TokenResponse",
+    "OTPSentResponse",
+    "OTPVerifyRequest",
+    "ResendOTPRequest",
 ]
