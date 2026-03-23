@@ -24,11 +24,6 @@ student_performance.db
 *.db-wal
 *.db-shm
 
-# Model artifacts
-backend/ml/models/*.joblib
-backend/ml/models/*.npy
-backend/ml/models/*.keras
-backend/ml/models/*.h5
 
 
 # Node / Next

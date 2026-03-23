@@ -13,13 +13,20 @@ from preprocessing import FEATURES, int_to_label_map, label_to_int
 
 try:
     from tensorflow import keras
-except Exception as e:  # pragma: no cover
-    raise SystemExit(
-        "TensorFlow is required for DL training. Install backend requirements and re-run."
-    ) from e
+except Exception:  # pragma: no cover
+    keras = None
 
 
 def main() -> None:
+    out_dir = Path(__file__).resolve().parent / "models"
+    if (out_dir / "dl_model.keras").exists():
+        print("DL model artifacts already exist — skipping training.")
+        return
+
+    if keras is None:
+        print("TensorFlow not available — skipping DL training.")
+        return
+
     root = Path(__file__).resolve().parents[1]
     data_path = root / "data" / "student_data.csv"
     if not data_path.exists():
