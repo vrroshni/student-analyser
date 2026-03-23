@@ -2,7 +2,7 @@
 
 ## Description
 
-The Level 0 DFD (Context Diagram) provides the highest-level overview of the Student Performance Analyzer system. It shows the system as a single process, the external entity (Teacher) that interacts with it, and the data stores it depends on.
+The Level 0 DFD (Context Diagram) provides the highest-level overview of the Edu Predict system. It shows the system as a single process, the external entities (Teacher and Admin) that interact with it, and the data stores it depends on.
 
 ---
 
@@ -86,6 +86,7 @@ The Level 0 DFD (Context Diagram) provides the highest-level overview of the Stu
 | Symbol | Entity | Description |
 |--------|--------|-------------|
 | Rectangle | **Teacher** | The primary user who registers, logs in, enters student data, and receives performance predictions |
+| Rectangle | **Admin** | System administrator who logs in with hardcoded credentials to view all registered teachers and students |
 
 ### Process
 
@@ -115,3 +116,6 @@ The Level 0 DFD (Context Diagram) provides the highest-level overview of the Stu
 | 9 | P0 | D1 | Write: Create teacher records, store prediction records |
 | 10 | D1 | P0 | Read: Verify teacher credentials, retrieve prediction history |
 | 11 | D2 | P0 | Load: Trained RF/NN models, fitted scaler, label map, background data |
+| 12 | Admin | P0 | Admin credentials (email, password) for login |
+| 13 | P0 | Admin | JWT token with admin role |
+| 14 | P0 | Admin | List of all registered teachers and students |

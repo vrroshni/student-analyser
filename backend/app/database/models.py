@@ -93,3 +93,10 @@ class CsvStudent(Base):
     department: Mapped[str] = mapped_column(String, nullable=False)
     semesters_json: Mapped[str] = mapped_column(String, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+
+
+class AppSettings(Base):
+    __tablename__ = "app_settings"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, default=1)
+    otp_enabled: Mapped[bool] = mapped_column(Integer, default=False, nullable=False)

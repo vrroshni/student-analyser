@@ -2,18 +2,24 @@
 
 import { useEffect, useState } from "react";
 
-import type { PredictionOutput } from "@/components/StudentForm";
+import type { PredictionOutput, StudentInput, ModelType } from "@/components/StudentForm";
 import { HistoryList } from "@/components/HistoryList";
 import { StudentForm } from "@/components/StudentForm";
 import { PredictionResult } from "@/components/PredictionResult";
 import { AuthCard } from "@/components/TeacherAuthCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { api } from "@/lib/api";
 
-function getRoleFromToken(token: string): "teacher" | "student" | null {
+type UserRole = "teacher" | "student" | "admin" | null;
+
+function getRoleFromToken(token: string): UserRole {
   try {
     const payload = JSON.parse(atob(token.split(".")[1]));
-    return payload.role === "teacher" ? "teacher" : payload.role === "student" ? "student" : null;
+    if (payload.role === "teacher") return "teacher";
+    if (payload.role === "student") return "student";
+    if (payload.role === "admin") return "admin";
+    return null;
   } catch {
     return null;
   }
@@ -24,7 +30,8 @@ export default function Page() {
   const [error, setError] = useState<string>("");
   const [predictLoading, setPredictLoading] = useState<boolean>(false);
   const [token, setToken] = useState<string>("");
-  const [userRole, setUserRole] = useState<"teacher" | "student" | null>(null);
+  const [userRole, setUserRole] = useState<UserRole>(null);
+  const [lastSubmittedData, setLastSubmittedData] = useState<StudentInput | null>(null);
 
   useEffect(() => {
     const t = window.localStorage.getItem("access_token") || window.localStorage.getItem("teacher_access_token") || "";
@@ -44,6 +51,28 @@ export default function Page() {
     };
   }, []);
 
+  async function handleAlternatePredict() {
+    if (!lastSubmittedData || !result) return;
+
+    const currentModel: ModelType = result.model_used.toLowerCase().includes("random forest") ? "ml" : "dl";
+    const alternateModel: ModelType = currentModel === "ml" ? "dl" : "ml";
+
+    setPredictLoading(true);
+    setError("");
+
+    try {
+      const res = await api.post<PredictionOutput>("/predict", lastSubmittedData, {
+        params: { model_type: alternateModel }
+      });
+      setResult(res.data);
+    } catch (e: any) {
+      const detail = e?.response?.data?.detail;
+      setError(typeof detail === "string" ? detail : "Could not run alternate prediction");
+    } finally {
+      setPredictLoading(false);
+    }
+  }
+
   function logout() {
     window.localStorage.removeItem("access_token");
     window.localStorage.removeItem("teacher_access_token");
@@ -60,10 +89,7 @@ export default function Page() {
       <div className="mx-auto max-w-7xl px-4 pb-10 pt-8">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <div className="text-xl font-bold tracking-tight">Student Performance Analyzer</div>
-            <div className="mt-1 text-sm text-muted-foreground">
-              FastAPI + Scikit-learn + TensorFlow (optional) + SHAP + SQLite
-            </div>
+            <div className="text-xl font-bold tracking-tight">Edu Predict</div>
           </div>
 
           {token ? (
@@ -109,8 +135,14 @@ export default function Page() {
                     setError(msg);
                   }}
                   onLoadingChange={(l) => setPredictLoading(l)}
+                  onSubmittedDataChange={(data) => setLastSubmittedData(data)}
                 />
-                <PredictionResult result={result} loading={predictLoading} />
+                <PredictionResult
+                  result={result}
+                  loading={predictLoading}
+                  userRole={userRole}
+                  onTryAlternate={handleAlternatePredict}
+                />
               </div>
             </TabsContent>
 

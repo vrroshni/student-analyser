@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -64,11 +65,19 @@ class TeacherSignup(BaseModel):
 
 class TeacherLogin(BaseModel):
     email: str = Field(..., min_length=5, max_length=254)
+    password: Optional[str] = Field(default=None, max_length=128)
 
     @field_validator("email")
     @classmethod
     def validate_email(cls, v: str) -> str:
         return _validate_email(v)
+
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None:
+            return _validate_password_strength(v)
+        return v
 
 
 class StudentSignup(BaseModel):
@@ -94,6 +103,24 @@ class StudentSignup(BaseModel):
 
 class StudentLogin(BaseModel):
     email: str = Field(..., min_length=5, max_length=254)
+    password: Optional[str] = Field(default=None, max_length=128)
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, v: str) -> str:
+        return _validate_email(v)
+
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None:
+            return _validate_password_strength(v)
+        return v
+
+
+class AdminLogin(BaseModel):
+    email: str = Field(..., min_length=5, max_length=254)
+    password: str = Field(..., min_length=1, max_length=128)
 
     @field_validator("email")
     @classmethod
@@ -128,6 +155,14 @@ class OTPVerifyRequest(BaseModel):
         if not v.isdigit() or len(v) != 6:
             raise ValueError("OTP must be exactly 6 digits")
         return v
+
+
+class OTPSettingsResponse(BaseModel):
+    otp_enabled: bool
+
+
+class OTPSettingsUpdate(BaseModel):
+    otp_enabled: bool
 
 
 class ResendOTPRequest(BaseModel):

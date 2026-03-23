@@ -60,10 +60,11 @@ type CsvStudentData = {
 };
 
 type Props = {
-  userRole?: "teacher" | "student" | null;
+  userRole?: "teacher" | "student" | "admin" | null;
   onResult: (r: PredictionOutput) => void;
   onError: (msg: string) => void;
   onLoadingChange?: (loading: boolean) => void;
+  onSubmittedDataChange?: (data: StudentInput) => void;
 };
 
 const semesterSchema = z
@@ -127,7 +128,7 @@ const DEFAULTS: StudentInput = {
   ]
 };
 
-export function StudentForm({ userRole, onResult, onError, onLoadingChange }: Props) {
+export function StudentForm({ userRole, onResult, onError, onLoadingChange, onSubmittedDataChange }: Props) {
   const [modelType, setModelType] = useState<ModelType>("ml");
   const [loading, setLoading] = useState(false);
   const [values, setValues] = useState<StudentInput>(DEFAULTS);
@@ -297,11 +298,13 @@ export function StudentForm({ userRole, onResult, onError, onLoadingChange }: Pr
           `http://localhost:8000/records/${res.data.record_id}/photo?t=${Date.now()}`
         );
         onResult(res.data);
+        onSubmittedDataChange?.(parsed.data);
       } else {
         const res = await api.post<PredictionOutput>("/predict", parsed.data, {
           params: { model_type: modelType }
         });
         onResult(res.data);
+        onSubmittedDataChange?.(parsed.data);
       }
     } catch (e: any) {
       const detail = e?.response?.data?.detail;
@@ -458,17 +461,19 @@ export function StudentForm({ userRole, onResult, onError, onLoadingChange }: Pr
           ) : null}
         </div>
 
-        <div className="space-y-2">
-          <div className="text-sm font-medium">Model</div>
-          <select
-            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            value={modelType}
-            onChange={(e) => setModelType(e.target.value as ModelType)}
-          >
-            <option value="ml">ML (Random Forest)</option>
-            <option value="dl">DL (Neural Network)</option>
-          </select>
-        </div>
+        {userRole === "admin" && (
+          <div className="space-y-2">
+            <div className="text-sm font-medium">Model</div>
+            <select
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              value={modelType}
+              onChange={(e) => setModelType(e.target.value as ModelType)}
+            >
+              <option value="ml">ML (Random Forest)</option>
+              <option value="dl">DL (Neural Network)</option>
+            </select>
+          </div>
+        )}
 
         <div className="space-y-2">
           <div className="text-sm font-medium">Student photo (optional)</div>

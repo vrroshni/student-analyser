@@ -17,11 +17,12 @@ graph TD
         FE_Result["PredictionResult\n(Badge + Charts)"]
         FE_History["HistoryList\n(Past Predictions Table)"]
         FE_API["API Client\n(Axios + JWT Interceptor)"]
+        FE_Admin["AdminDashboard\n(Admin Login + User Tables)"]
     end
 
     subgraph Backend["Backend (FastAPI)"]
         BE_API["API Server\n(main.py)\nRoute Definitions + CORS"]
-        BE_Auth["Auth Module\n(auth.py)\nJWT + bcrypt"]
+        BE_Auth["Auth Module\n(auth.py)\nJWT + bcrypt + Admin auth"]
         BE_Schema["Schemas\n(Pydantic Validation)\nStudentInput, AuthPayloads"]
         BE_Predict["Predictor Service\n(predictor.py)\nML/DL Inference + SHAP"]
         BE_DB["Database Module\n(db.py + models.py + crud.py)\nSQLAlchemy ORM"]
@@ -47,6 +48,8 @@ graph TD
     FE_Page --> FE_History
     FE_Auth --> FE_API
     FE_Form --> FE_API
+    FE_Page --> FE_Admin
+    FE_Admin --> FE_API
     FE_History --> FE_API
 
     %% Frontend to Backend
@@ -85,6 +88,7 @@ graph TD
 | **StudentForm** | `frontend/src/components/StudentForm.tsx` | Multi-step form for student data entry. Manages dynamic semester list (add/remove). Validates all constraints (age 15-30, marks 0-300, attendance 0-100). Triggers prediction API call |
 | **PredictionResult** | `frontend/src/components/PredictionResult.tsx` | Displays prediction outcome: color-coded badge, confidence percentage, SHAP feature contribution charts (Recharts) |
 | **HistoryList** | `frontend/src/components/HistoryList.tsx` | Fetches and displays past predictions in a table with sorting by date |
+| **AdminDashboard** | `frontend/src/app/admin/page.tsx` | Admin login form and dashboard. Displays all registered teachers and students in tables. Calls admin API endpoints |
 | **API Client** | `frontend/src/lib/api.ts` | Axios instance with JWT Bearer token interceptor. Handles 401 responses by clearing token and triggering logout |
 
 ### Backend Modules

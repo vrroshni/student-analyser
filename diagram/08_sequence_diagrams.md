@@ -187,3 +187,61 @@ sequenceDiagram
         Frontend-->>Teacher: Show Predict / History tabs
     end
 ```
+
+---
+
+## 5. Admin Login Flow
+
+```mermaid
+sequenceDiagram
+    actor Admin
+    participant Frontend as Next.js Frontend (/admin)
+    participant Backend as FastAPI Backend
+    participant Auth as Auth Module
+
+    Admin->>Frontend: Enter email + password, click "Login"
+    Frontend->>Frontend: Validate input (Zod adminLoginSchema)
+    Frontend->>Backend: POST /auth/admin/login {email, password}
+    Backend->>Backend: Compare against hardcoded credentials
+
+    alt Credentials Valid
+        Backend->>Auth: create_access_token(role="admin", subject_id=0)
+        Auth-->>Backend: JWT token (HS256, 24h expiry)
+        Backend-->>Frontend: 200 {access_token, token_type: "bearer"}
+        Frontend->>Frontend: Store token in localStorage
+        Frontend-->>Admin: Show Admin Dashboard (Teachers + Students tables)
+    else Credentials Invalid
+        Backend-->>Frontend: 401 "Invalid admin credentials"
+        Frontend-->>Admin: Display error message
+    end
+```
+
+---
+
+## 6. Admin View Users Flow
+
+```mermaid
+sequenceDiagram
+    actor Admin
+    participant Frontend as Next.js Frontend (/admin)
+    participant Backend as FastAPI Backend
+    participant Auth as Auth Module
+    participant DB as SQLite Database
+
+    Admin->>Frontend: Dashboard loads after login
+    Frontend->>Backend: GET /admin/teachers<br/>Header: Bearer JWT
+    Frontend->>Backend: GET /admin/students<br/>Header: Bearer JWT
+
+    Backend->>Auth: Validate JWT (require role="admin")
+    Auth-->>Backend: Authenticated as admin
+
+    Backend->>DB: SELECT * FROM teachers ORDER BY created_at DESC
+    DB-->>Backend: Teacher records
+    Backend-->>Frontend: JSON array of teachers
+
+    Backend->>DB: SELECT * FROM students ORDER BY created_at DESC
+    DB-->>Backend: Student records
+    Backend-->>Frontend: JSON array of students
+
+    Frontend-->>Admin: Display Teachers table + Students table
+```

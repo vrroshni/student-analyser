@@ -104,3 +104,7 @@ The `semesters_json` column stores an array of semester objects:
   }
 ]
 ```
+
+## Admin Authentication
+
+The Admin role does **not** have a corresponding database table. Admin credentials are hardcoded in the backend source code (`backend/app/auth.py`). The admin authenticates via `POST /auth/admin/login` and receives a JWT token with `role: "admin"` and a sentinel `sub: "0"`. This allows the admin to access admin-only endpoints (`GET /admin/teachers`, `GET /admin/students`) without any database entity.

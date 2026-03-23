@@ -99,11 +99,11 @@ The Level 2 DFD further decomposes each Level 1 process into detailed sub-proces
 
 | Sub-Process | Description |
 |-------------|-------------|
-| **P1.1** Receive Auth Request | Receives HTTP POST request at `/auth/signup`, `/auth/login`, `/auth/student/signup`, or `/auth/student/login` |
-| **P1.2** Validate Payload | Validates request body against `TeacherSignup`/`TeacherLogin` or `StudentSignup`/`StudentLogin` Pydantic schema |
-| **P1.3** Query User Record | Queries SQLite database for existing teacher/student record by email |
-| **P1.4** Hash / Verify Password | **Signup:** Hashes password using bcrypt and stores new user. **Login:** Verifies submitted password against stored hash |
-| **P1.5** Generate JWT Token | Creates JWT token using python-jose (HS256 algorithm, 24-hour expiry, subject id as `sub`, and role claim `teacher`/`student`) |
+| **P1.1** Receive Auth Request | Receives HTTP POST request at `/auth/signup`, `/auth/login`, `/auth/student/signup`, `/auth/student/login`. Also receives `POST /auth/admin/login` |
+| **P1.2** Validate Payload | Validates request body against `TeacherSignup`/`TeacherLogin` or `StudentSignup`/`StudentLogin` Pydantic schema. For admin login, validates against `AdminLogin` Pydantic schema |
+| **P1.3** Query User Record | Queries SQLite database for existing teacher/student record by email. For admin login, skips DB query — compares against hardcoded credentials |
+| **P1.4** Hash / Verify Password | **Signup:** Hashes password using bcrypt and stores new user. **Login:** Verifies submitted password against stored hash. For admin login, compares plain password directly (no bcrypt) |
+| **P1.5** Generate JWT Token | Creates JWT token using python-jose (HS256 algorithm, 24-hour expiry, subject id as `sub`, and role claim `teacher`/`student`). For admin, generates JWT with `role: 'admin'` and sentinel `sub: '0'` |
 | **P1.6** Return Token Response | Returns `TokenResponse` with access token and token type |
 
 ---
@@ -320,9 +320,9 @@ The Level 2 DFD further decomposes each Level 1 process into detailed sub-proces
   │                                            │                            │
   │                                    Decompose into                       │
   │                                            │                            │
-  │  Level 1              ╭─────╮    ╭─────╮    ╭─────╮                    │
-  │  (3 Processes)       ( P1   )  ( P2   )  ( P3   )                    │
-  │                       ╰─────╯    ╰─────╯    ╰─────╯                    │
+  │  Level 1              ╭─────╮    ╭─────╮    ╭─────╮    ╭─────╮        │
+  │  (4 Processes)       ( P1   )  ( P2   )  ( P3   )  ( P4   )        │
+  │                       ╰─────╯    ╰─────╯    ╰─────╯    ╰─────╯        │
   │                          │          │          │                        │
   │                   Decompose   Decompose   Decompose                    │
   │                          │          │          │                        │

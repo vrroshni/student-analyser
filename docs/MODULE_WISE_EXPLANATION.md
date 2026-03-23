@@ -16,6 +16,8 @@ This document explains the project **module by module**, including what each mod
   - Scripts that generate data and train models.
 - **Inference + Explainability**
   - Loads saved models and produces predictions + feature contributions (SHAP).
+- **Admin Module**
+  - Separate route (`/admin`) for admin login and dashboard to view all registered users.
 
 ---
 
@@ -120,6 +122,26 @@ This document explains the project **module by module**, including what each mod
 
 **What to say in viva:**
 - “We use JWT so the backend remains stateless — every request carries authentication proof.”
+
+---
+
+## 4.1) Admin module
+
+- **Frontend:** `frontend/src/app/admin/page.tsx`
+- **Backend:** Endpoints in `backend/app/main.py`, auth in `backend/app/auth.py`
+
+### What it does
+- Provides a separate login page at `/admin` for the system administrator.
+- Admin credentials are hardcoded (`admin@gmail.com` / `Admin@123`), not stored in the database.
+- After login, admin sees a dashboard with two tables: all registered teachers and all registered students.
+- Admin can also use prediction and history features (sees all records like a teacher).
+
+### Data flow
+- Admin navigates to `/admin` → enters credentials → `POST /auth/admin/login` → backend checks hardcoded credentials → returns JWT with `role: "admin"`.
+- Dashboard calls `GET /admin/teachers` and `GET /admin/students` → backend verifies admin JWT → queries all records → returns lists.
+
+**What to say in viva:**
+- "Admin is a special role with hardcoded credentials. It doesn't use OTP or database storage — it's a simple, secure way to provide administrative access for viewing all users."
 
 ---
 
@@ -233,4 +255,4 @@ This document explains the project **module by module**, including what each mod
 
 ## 9) Viva-ready “one-minute explanation”
 
-“This project is a full-stack student performance prediction system. Teachers authenticate using JWT. The frontend sends student semester marks and attendance to a FastAPI backend. The backend converts inputs into a fixed feature vector and runs either a Random Forest ML model or a Neural Network DL model, both trained on a generated dataset. The system stores each prediction in SQLite and shows prediction history. To make results explainable, we compute SHAP contributions so the teacher can see which semester marks/attendance influenced the prediction.”
+“This project is a full-stack student performance prediction system. Teachers authenticate using JWT. The frontend sends student semester marks and attendance to a FastAPI backend. The backend converts inputs into a fixed feature vector and runs either a Random Forest ML model or a Neural Network DL model, both trained on a generated dataset. The system stores each prediction in SQLite and shows prediction history. To make results explainable, we compute SHAP contributions so the teacher can see which semester marks/attendance influenced the prediction. Additionally, an admin module allows a system administrator to log in with fixed credentials and view all registered teachers and students.”

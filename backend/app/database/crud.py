@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.schemas import StudentInput
 
-from .models import CsvStudent, PredictionRecord
+from .models import AppSettings, CsvStudent, PredictionRecord, Student, Teacher
 
 
 def create_prediction_record(
@@ -109,6 +109,34 @@ def create_csv_students_batch(
     return records
 
 
+def list_all_teachers(db: Session) -> List[Teacher]:
+    stmt = select(Teacher).order_by(desc(Teacher.created_at))
+    return list(db.scalars(stmt).all())
+
+
+def list_all_students(db: Session) -> List[Student]:
+    stmt = select(Student).order_by(desc(Student.created_at))
+    return list(db.scalars(stmt).all())
+
+
+def delete_teacher(db: Session, *, teacher_id: int) -> bool:
+    teacher = db.get(Teacher, teacher_id)
+    if teacher is None:
+        return False
+    db.delete(teacher)
+    db.commit()
+    return True
+
+
+def delete_student(db: Session, *, student_id: int) -> bool:
+    student = db.get(Student, student_id)
+    if student is None:
+        return False
+    db.delete(student)
+    db.commit()
+    return True
+
+
 def list_csv_students_for_teacher(
     db: Session,
     *,
@@ -120,3 +148,19 @@ def list_csv_students_for_teacher(
         .order_by(desc(CsvStudent.created_at))
     )
     return list(db.scalars(stmt).all())
+
+
+def get_otp_enabled(db: Session) -> bool:
+    row = db.query(AppSettings).filter(AppSettings.id == 1).first()
+    return bool(row.otp_enabled) if row else False
+
+
+def set_otp_enabled(db: Session, *, enabled: bool) -> bool:
+    row = db.query(AppSettings).filter(AppSettings.id == 1).first()
+    if row is None:
+        row = AppSettings(id=1, otp_enabled=enabled)
+        db.add(row)
+    else:
+        row.otp_enabled = enabled
+    db.commit()
+    return bool(row.otp_enabled)

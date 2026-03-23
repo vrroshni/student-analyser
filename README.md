@@ -291,6 +291,14 @@ History visibility:
 - Teacher accounts can view history for all records
 - Student accounts can view only their own history
 
+Admin login:
+
+- Navigate to [http://localhost:3000/admin](http://localhost:3000/admin)
+- Email: `admin@gmail.com`
+- Password: `Admin@123`
+- Admin can view all signed-up teachers and students
+- Admin can also run predictions and view all history
+
 ---
 
 ## Database

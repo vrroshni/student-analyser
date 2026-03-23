@@ -21,6 +21,11 @@ JWT_SECRET_KEY = "change_me_in_production"
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRES_MINUTES = 60 * 24
 
+# Hardcoded admin credentials (no DB entity).
+ADMIN_EMAIL = "admin@gmail.com"
+ADMIN_PASSWORD = "Admin@123"
+ADMIN_ID = 0  # sentinel – admin has no database row
+
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 
@@ -42,11 +47,11 @@ def verify_password(password: str, password_hash: str) -> bool:
 
 @dataclass(frozen=True)
 class AuthPrincipal:
-    role: Literal["teacher", "student"]
+    role: Literal["teacher", "student", "admin"]
     id: int
 
 
-def create_access_token(*, role: Literal["teacher", "student"], subject_id: int) -> str:
+def create_access_token(*, role: Literal["teacher", "student", "admin"], subject_id: int) -> str:
     expire = datetime.utcnow() + timedelta(minutes=JWT_EXPIRES_MINUTES)
     payload = {"sub": str(subject_id), "role": role, "exp": expire}
     return jwt.encode(payload, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
@@ -94,11 +99,14 @@ def get_current_principal(
         payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
         sub: Optional[str] = payload.get("sub")
         role: Optional[str] = payload.get("role")
-        if not sub or role not in {"teacher", "student"}:
+        if not sub or role not in {"teacher", "student", "admin"}:
             raise _unauthorized("Invalid token")
         subject_id = int(sub)
     except (JWTError, ValueError):
         raise _unauthorized("Invalid token")
+
+    if role == "admin":
+        return AuthPrincipal(role="admin", id=ADMIN_ID)
 
     if role == "teacher":
         if db.get(Teacher, subject_id) is None:
@@ -115,3 +123,13 @@ def require_principal(
     db: Session = Depends(get_db),
 ) -> AuthPrincipal:
     return get_current_principal(token=token, db=db)
+
+
+def require_admin(
+    token: str = Depends(oauth2_scheme),
+    db: Session = Depends(get_db),
+) -> AuthPrincipal:
+    principal = get_current_principal(token=token, db=db)
+    if principal.role != "admin":
+        raise _unauthorized("Admin access required")
+    return principal
