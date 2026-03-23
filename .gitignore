@@ -30,8 +30,6 @@ backend/ml/models/*.npy
 backend/ml/models/*.keras
 backend/ml/models/*.h5
 
-# Data outputs
-backend/data/*.csv
 
 # Node / Next
 frontend/node_modules/
