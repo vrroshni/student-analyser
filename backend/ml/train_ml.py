@@ -15,6 +15,11 @@ from preprocessing import FEATURES, int_to_label_map, label_to_int
 
 
 def main() -> None:
+    out_dir = Path(__file__).resolve().parent / "models"
+    if (out_dir / "rf_model.joblib").exists() and (out_dir / "scaler.joblib").exists():
+        print("ML model artifacts already exist — skipping training.")
+        return
+
     root = Path(__file__).resolve().parents[1]
     data_path = root / "data" / "student_data.csv"
     if not data_path.exists():
