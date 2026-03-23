@@ -68,3 +68,7 @@ export async function resendOTP(data: {
 }) {
   return api.post<OTPSentResponse>("/auth/resend-otp", data);
 }
+
+export async function adminLogin(data: { email: string; password: string }) {
+  return api.post<TokenResponse>("/auth/admin/login", data);
+}

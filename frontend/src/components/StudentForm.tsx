@@ -60,7 +60,7 @@ type CsvStudentData = {
 };
 
 type Props = {
-  userRole?: "teacher" | "student" | null;
+  userRole?: "teacher" | "student" | "admin" | null;
   onResult: (r: PredictionOutput) => void;
   onError: (msg: string) => void;
   onLoadingChange?: (loading: boolean) => void;

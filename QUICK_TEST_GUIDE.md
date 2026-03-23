@@ -80,6 +80,13 @@ Your issue: **"Even when we enter bad data of a student data, it's not giving ba
 - Model adds "+ Quality Check" to show data quality adjustment ✅
 - Error messages explain what's wrong and how to fix it ✅
 
+### Test 6: Admin Login and Dashboard
+1. Navigate to [http://localhost:3000/admin](http://localhost:3000/admin)
+2. Enter email: `admin@gmail.com` and password: `Admin@123`
+3. Click "Login"
+4. **Expected**: Admin dashboard loads showing tables of all registered teachers and students
+5. Try wrong password — should show error "Invalid admin credentials"
+
 ## 🚀 Start Testing Now
 
 ```bash

@@ -35,6 +35,7 @@ The output is a **performance band**:
   - View prediction **confidence**
   - View a feature-wise explanation (SHAP-based contribution values)
   - View **history** of previous predictions
+- An **admin dashboard** (at `/admin`) for viewing all registered teachers and students
 
 ---
 
@@ -264,6 +265,13 @@ It uses:
 - If token is invalid/expired, backend returns `401`.
 - Frontend clears localStorage token and forces logout.
 
+### Admin authentication
+- Admin uses hardcoded credentials (email: `admin@gmail.com`, password: `Admin@123`).
+- No OTP is required — admin logs in with direct email + password.
+- Admin is not stored in the database; credentials are checked in code.
+- JWT token contains `role: "admin"` with a sentinel ID of `0`.
+- Admin can view all teachers and students via `GET /admin/teachers` and `GET /admin/students`.
+
 ---
 
 ## 9) Common viva / interview questions (with answers)
@@ -321,6 +329,9 @@ It uses:
 8. Predict with `dl`
 9. Show confidence + contributions chart
 10. Go to History tab and show saved records
+11. Open [http://localhost:3000/admin](http://localhost:3000/admin)
+12. Login as admin (admin@gmail.com / Admin@123)
+13. View all registered teachers and students in the dashboard
 
 ---
 
@@ -334,6 +345,9 @@ It uses:
 - `POST /predict-with-photo?model_type=ml|dl`
 - `GET /history`
 - `GET /records/{id}/photo`
+- `POST /auth/admin/login`
+- `GET /admin/teachers`
+- `GET /admin/students`
 
 Use the interactive API docs:
 - http://localhost:8000/docs

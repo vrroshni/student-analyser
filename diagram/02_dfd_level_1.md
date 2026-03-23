@@ -100,9 +100,10 @@ The Level 1 DFD decomposes the Student Performance Analyzer system (P0) into thr
 
 | Process | API Routes | Responsibility |
 |---------|------------|----------------|
-| **P1: Authentication Module** | `POST /auth/signup`, `POST /auth/login`, `POST /auth/student/signup`, `POST /auth/student/login` | Handles teacher and student registration and login. Validates credentials, hashes passwords with bcrypt, issues JWT tokens (HS256, 24-hour expiry) containing subject id and role |
+| **P1: Authentication Module** | `POST /auth/signup`, `POST /auth/login`, `POST /auth/student/signup`, `POST /auth/student/login`, `POST /auth/admin/login` | Handles teacher and student registration and login. Validates credentials, hashes passwords with bcrypt, issues JWT tokens (HS256, 24-hour expiry) containing subject id and role. Also handles admin login with hardcoded credentials (no DB lookup) |
 | **P2: Prediction Engine** | `POST /predict`, `POST /predict-with-photo` | Core prediction pipeline. Validates JWT, constructs 25-feature vector, runs ML or DL inference, generates SHAP explanations, applies rule-based override, stores result. If the requester is a student, the record is stored with `student_id` ownership |
 | **P3: History Service** | `GET /history`, `GET /records/{id}/photo` | Retrieves past prediction records ordered by date. Teachers can view all records. Students can view only their own records (scoped by `student_id`) |
+| **P4: Admin Service** | `GET /admin/teachers`, `GET /admin/students` | Admin-only endpoints. Validates admin JWT, queries all teacher and student records from database, returns lists |
 
 ---
 
@@ -120,3 +121,8 @@ The Level 1 DFD decomposes the Student Performance Analyzer system (P0) into thr
 | 8 | Teacher/Student | P3 | History Request + JWT | Requests prediction history with JWT authentication and optional limit parameter |
 | 9 | P3 | Teacher/Student | List of Prediction Records | Returns ordered list of past prediction records (newest first). Students receive only their own records |
 | 10 | P3 | D1 | Query Prediction Records | Queries prediction_records table ordered by creation date with limit (and `student_id` filter for students) |
+| 11 | Admin | P1 | Admin Credentials + Login | Admin submits email and password for direct authentication (no OTP) |
+| 12 | P1 | Admin | JWT Token (admin) | Returns JWT with role="admin" on valid credentials |
+| 13 | Admin | P4 | Admin Dashboard Request + JWT | Requests list of all teachers and students |
+| 14 | P4 | Admin | Lists of Teachers and Students | Returns all registered users |
+| 15 | P4 | D1 | Query All Users | Queries teachers and students tables |

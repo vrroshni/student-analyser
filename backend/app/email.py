@@ -22,7 +22,7 @@ fast_mail = FastMail(conf)
 async def send_otp_email(to_email: str, otp_code: str) -> None:
     html = f"""
     <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
-        <h2 style="color: #1a1a1a;">Student Performance Analyzer</h2>
+        <h2 style="color: #1a1a1a;">Edu Predict</h2>
         <p>Your verification code is:</p>
         <div style="font-size: 32px; font-weight: bold; letter-spacing: 8px; text-align: center;
                     padding: 16px; background: #f4f4f5; border-radius: 8px; margin: 16px 0;">

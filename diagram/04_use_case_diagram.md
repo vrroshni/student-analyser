@@ -2,7 +2,7 @@
 
 ## Description
 
-The Use Case Diagram shows all interactions between the Teacher and Student actors and the Student Performance Analyzer system. It identifies use cases covering authentication, data entry, prediction, and history review, including role-based access to prediction history.
+The Use Case Diagram shows all interactions between the Teacher, Student, and Admin actors and the Edu Predict system. It identifies use cases covering authentication, data entry, prediction, and history review, including role-based access to prediction history.
 
 ## Diagram
 
@@ -10,6 +10,7 @@ The Use Case Diagram shows all interactions between the Teacher and Student acto
 flowchart LR
     Teacher["<b>Teacher</b>\n(Actor)"]
     Student["<b>Student</b>\n(Actor)"]
+    Admin["<b>Admin</b>\n(Actor)"]
 
     subgraph System["Student Performance Analyzer"]
         UC1(["UC1: Sign Up"])
@@ -24,6 +25,8 @@ flowchart LR
         UC10(["UC10: View Prediction\nHistory (All Students)"])
         UC12(["UC12: View Own\nPrediction History"])
         UC11(["UC11: View Performance\nCharts"])
+        UC13(["UC13: Admin Login\n(Email + Password)"])
+        UC14(["UC14: View All\nRegistered Users"])
     end
 
     %% Teacher associations
@@ -51,6 +54,19 @@ flowchart LR
     Student --- UC9
     Student --- UC12
     Student --- UC11
+
+    %% Admin associations
+    Admin --- UC3
+    Admin --- UC4
+    Admin --- UC5
+    Admin --- UC6
+    Admin --- UC7
+    Admin --- UC8
+    Admin --- UC9
+    Admin --- UC10
+    Admin --- UC11
+    Admin --- UC13
+    Admin --- UC14
 
     %% Dependencies
     UC4 -.->|"<<include>>"| UC7
@@ -174,3 +190,22 @@ flowchart LR
 | **Precondition** | Prediction result is displayed (UC8) |
 | **Main Flow** | 1. System renders interactive charts using Recharts library. 2. Shows semester-wise performance trends. 3. Displays feature contribution visualization |
 | **Postcondition** | Teacher has a visual understanding of student performance patterns |
+
+### UC13: Admin Login
+
+| Field | Description |
+|-------|-------------|
+| **Actor** | Admin |
+| **Precondition** | Admin knows hardcoded credentials |
+| **Main Flow** | 1. Admin navigates to /admin route. 2. Enters email and password. 3. System validates against hardcoded credentials. 4. System issues JWT token with role="admin" and redirects to admin dashboard |
+| **Postcondition** | Admin is authenticated; JWT token stored in browser |
+| **Alternate Flow** | If credentials are invalid, system shows error "Invalid admin credentials" |
+
+### UC14: View All Registered Users
+
+| Field | Description |
+|-------|-------------|
+| **Actor** | Admin |
+| **Precondition** | Admin is logged in |
+| **Main Flow** | 1. Admin views the dashboard. 2. System fetches all teachers and students from database. 3. Displays two tables showing Name, Email, and Joined date for each user |
+| **Postcondition** | Admin can see all registered teachers and students |

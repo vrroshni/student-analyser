@@ -196,3 +196,35 @@ print(f"Response: {response.json()}")
 - [ ] **Verify**: Very low marks rejected with proper error message
 - [ ] **Verify**: Zero attendance rejected with proper error message
 - [ ] **Verify**: Low but valid data gets "Needs Attention" with low confidence
+
+## Admin Authentication Test Cases
+
+### Case 7: Admin Login - Valid Credentials
+```bash
+curl -X POST http://localhost:8000/auth/admin/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@gmail.com","password":"Admin@123"}'
+```
+**Expected**: 200 Success - `{"access_token":"...","token_type":"bearer"}`
+
+### Case 8: Admin Login - Invalid Password
+```bash
+curl -X POST http://localhost:8000/auth/admin/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@gmail.com","password":"wrong"}'
+```
+**Expected**: 401 Error - `{"detail":"Invalid admin credentials"}`
+
+### Case 9: Admin-Only Endpoint - Without Admin Token
+```bash
+curl http://localhost:8000/admin/teachers \
+  -H "Authorization: Bearer TEACHER_TOKEN_HERE"
+```
+**Expected**: 401 Error - `{"detail":"Admin access required"}`
+
+### Case 10: Admin-Only Endpoint - With Admin Token
+```bash
+curl http://localhost:8000/admin/teachers \
+  -H "Authorization: Bearer ADMIN_TOKEN_HERE"
+```
+**Expected**: 200 Success - JSON array of teacher records

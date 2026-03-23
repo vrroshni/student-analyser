@@ -47,6 +47,13 @@ This document describes the **module design** of the Student Performance Analyze
   - JWT token issue/verification
   - Dependency to load current teacher
 
+### M3.1: Admin (Administrative Subsystem)
+- **Location**: `backend/app/auth.py` (credentials + `require_admin`), `backend/app/main.py` (endpoints), `frontend/src/app/admin/page.tsx` (UI)
+- **Responsibility**:
+  - Admin login with hardcoded credentials
+  - Admin-only endpoints to list all teachers and students
+  - Admin dashboard UI
+
 ### M4: Database (Persistence Layer)
 - **Location**: `backend/app/database/`
 - **Responsibility**:
@@ -86,11 +93,15 @@ graph TD
   DataGen[Data Generator\ngenerate_data.py]
   Dataset[(Dataset\nbackend/data/student_data.csv)]
 
+  Admin[Admin Module\nadmin endpoints + UI]
+
   Frontend -->|HTTP JSON + JWT| API
 
   API --> Auth
   API --> DB
   API --> Predictor
+  API --> Admin
+  Admin --> DB
 
   Predictor --> Artifacts
 

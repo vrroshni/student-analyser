@@ -101,6 +101,16 @@ class StudentLogin(BaseModel):
         return _validate_email(v)
 
 
+class AdminLogin(BaseModel):
+    email: str = Field(..., min_length=5, max_length=254)
+    password: str = Field(..., min_length=1, max_length=128)
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, v: str) -> str:
+        return _validate_email(v)
+
+
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"

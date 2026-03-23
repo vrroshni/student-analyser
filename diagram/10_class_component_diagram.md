@@ -21,6 +21,9 @@ classDiagram
         +predict_with_photo(...) PredictionOutput
         +history(limit, db) List~dict~
         +get_record_photo(record_id, db) Response
+        +admin_login(payload) TokenResponse
+        +get_all_teachers(db) List~dict~
+        +get_all_students(db) List~dict~
         -_payload_from_student(student) dict
         -_rule_score(student) float
         -_rule_label(score) str
@@ -67,6 +70,7 @@ classDiagram
         +verify_password(password, hash) bool
         +create_access_token(role, subject_id) str
         +require_principal(token, db) AuthPrincipal
+        +require_admin(token, db) AuthPrincipal
         +get_current_teacher(token, db) Teacher
         +get_current_student(token, db) Student
     }
@@ -121,6 +125,11 @@ classDiagram
         +password : str
     }
 
+    class AdminLogin {
+        +email : str
+        +password : str
+    }
+
     class TokenResponse {
         +access_token : str
         +token_type : str
@@ -150,6 +159,7 @@ classDiagram
 
     FastAPIApp --> TeacherSignup : validates signup
     FastAPIApp --> TeacherLogin : validates login
+    FastAPIApp --> AdminLogin : validates admin login
     FastAPIApp --> TokenResponse : returns auth token
 ```
 
@@ -167,6 +177,8 @@ flowchart TD
         Form["<b>StudentForm</b>\nStudent Data Input\nDynamic semester list\nModel type selection\nPhoto upload"]
         Result["<b>PredictionResult</b>\nPrediction badge (color-coded)\nConfidence percentage\nSHAP feature chart\nExplanation text"]
         History["<b>HistoryList</b>\nPast predictions table\nSorted by date\nColor-coded badges"]
+
+        AdminPage["<b>AdminDashboard</b>\n(/admin route)\nAdmin Login + User Tables"]
 
         API["<b>api.ts</b>\nAxios Instance\nJWT Bearer interceptor\nUses access_token\n401 → auto logout"]
 
@@ -205,6 +217,12 @@ flowchart TD
     History --> Table
     History --> Badge
 
+    AdminPage --> API
+    AdminPage --> Card
+    AdminPage --> Table
+    AdminPage --> Input
+    AdminPage --> Button
+
     API -->|"HTTP + JWT"| Backend["FastAPI Backend\n(Port 8000)"]
 ```
 
@@ -221,6 +239,7 @@ flowchart TD
 | **StudentForm** | `StudentForm.tsx` | Props: `token`, `onResult(data)`. State: `semesters[]`, `modelType`, `loading` | Multi-field form with dynamic semester management. Validates constraints. Calls POST `/predict` |
 | **PredictionResult** | `PredictionResult.tsx` | Props: `result` (prediction data) | Renders prediction badge (green/yellow/red), confidence %, model name, and SHAP contribution bar chart |
 | **HistoryList** | `HistoryList.tsx` | Props: `token`. State: `records[]`, `loading` | Fetches and displays prediction history table from GET `/history` |
+| **AdminDashboard** | `app/admin/page.tsx` | State: `token`, `teachers[]`, `students[]`, `loading` | Admin login page and dashboard. Validates admin credentials via POST `/auth/admin/login`. Displays all teachers and students in tables via GET `/admin/teachers` and `/admin/students` |
 | **api.ts** | `lib/api.ts` | Axios instance | Configured with base URL (localhost:8000). Interceptor adds JWT Bearer header. On 401, clears token and dispatches logout event |
 
 ### Backend Classes
@@ -229,7 +248,7 @@ flowchart TD
 |-------|------|-------------|----------------|
 | **FastAPIApp** | `main.py` | `predict()`, `teacher_signup()`, `teacher_login()`, `history()` | Route handler with all endpoint logic, feature engineering, and rule override |
 | **PredictorService** | `services/predictor.py` | `predict()`, `_predict_ml()`, `_predict_dl()`, `_explain_ml()`, `_explain_dl()` | Lazy-loads models, runs inference, generates SHAP explanations |
-| **AuthModule** | `auth.py` | `hash_password()`, `verify_password()`, `create_access_token()`, `get_current_teacher()` | JWT token management and password hashing |
+| **AuthModule** | `auth.py` | `hash_password()`, `verify_password()`, `create_access_token()`, `get_current_teacher()`, `require_admin()` | JWT token management and password hashing |
 | **Teacher** | `database/models.py` | — (ORM model) | SQLAlchemy model for the `teachers` table |
 | **PredictionRecord** | `database/models.py` | — (ORM model) | SQLAlchemy model for the `prediction_records` table |
 | **StudentInput** | `schemas/student.py` | — (Pydantic model) | Request validation for prediction endpoints |
