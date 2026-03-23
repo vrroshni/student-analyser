@@ -16,7 +16,7 @@ from fastapi.responses import Response, StreamingResponse
 from sqlalchemy.orm import Session
 
 from app.auth import ADMIN_EMAIL, ADMIN_ID, ADMIN_PASSWORD, AuthPrincipal, create_access_token, get_current_teacher, hash_password, require_admin, require_principal, verify_password
-from app.database.crud import create_csv_students_batch, create_prediction_record, delete_student, delete_teacher, list_all_students, list_all_teachers, list_csv_students_for_teacher, list_prediction_records, list_prediction_records_for_student, set_prediction_photo
+from app.database.crud import create_csv_students_batch, create_prediction_record, delete_student, delete_teacher, get_otp_enabled, list_all_students, list_all_teachers, list_csv_students_for_teacher, list_prediction_records, list_prediction_records_for_student, set_otp_enabled, set_prediction_photo
 from app.database.db import SessionLocal, init_db
 from app.database.models import Student, Teacher
 from app.email import send_otp_email
@@ -26,6 +26,8 @@ from app.schemas import (
     AdminLogin,
     FeatureContribution,
     OTPSentResponse,
+    OTPSettingsResponse,
+    OTPSettingsUpdate,
     OTPVerifyRequest,
     PredictionOutput,
     ResendOTPRequest,
@@ -227,12 +229,29 @@ def health_check() -> dict:
     return {"status": "healthy"}
 
 
-@app.post("/auth/signup", response_model=OTPSentResponse)
-async def teacher_signup(payload: TeacherSignup, db: Session = Depends(get_db)) -> OTPSentResponse:
+@app.get("/auth/otp-status", response_model=OTPSettingsResponse)
+def get_otp_status(db: Session = Depends(get_db)) -> OTPSettingsResponse:
+    return OTPSettingsResponse(otp_enabled=get_otp_enabled(db))
+
+
+@app.post("/auth/signup", response_model=None)
+async def teacher_signup(payload: TeacherSignup, db: Session = Depends(get_db)):
     email = payload.email.lower().strip()
     existing = db.query(Teacher).filter(Teacher.email == email).first()
     if existing is not None:
         raise HTTPException(status_code=400, detail="Email already registered")
+
+    if not get_otp_enabled(db):
+        user = Teacher(
+            email=email,
+            password_hash=hash_password(payload.password),
+            name=(payload.name or "").strip(),
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        token = create_access_token(role="teacher", subject_id=user.id)
+        return TokenResponse(access_token=token)
 
     payload_data = json.dumps({
         "password_hash": hash_password(payload.password),
@@ -243,24 +262,44 @@ async def teacher_signup(payload: TeacherSignup, db: Session = Depends(get_db)) 
     return OTPSentResponse(email=email)
 
 
-@app.post("/auth/login", response_model=OTPSentResponse)
-async def teacher_login(payload: TeacherLogin, db: Session = Depends(get_db)) -> OTPSentResponse:
+@app.post("/auth/login", response_model=None)
+async def teacher_login(payload: TeacherLogin, db: Session = Depends(get_db)):
     email = payload.email.lower().strip()
     teacher = db.query(Teacher).filter(Teacher.email == email).first()
     if teacher is None:
         raise HTTPException(status_code=401, detail="No account found with this email")
+
+    if not get_otp_enabled(db):
+        if not payload.password:
+            raise HTTPException(status_code=400, detail="Password is required")
+        if not verify_password(payload.password, teacher.password_hash):
+            raise HTTPException(status_code=401, detail="Invalid password")
+        token = create_access_token(role="teacher", subject_id=teacher.id)
+        return TokenResponse(access_token=token)
 
     otp_record = create_otp_record(db, email=email, purpose="login", role="teacher")
     await send_otp_email(email, otp_record.otp_code)
     return OTPSentResponse(email=email)
 
 
-@app.post("/auth/student/signup", response_model=OTPSentResponse)
-async def student_signup(payload: StudentSignup, db: Session = Depends(get_db)) -> OTPSentResponse:
+@app.post("/auth/student/signup", response_model=None)
+async def student_signup(payload: StudentSignup, db: Session = Depends(get_db)):
     email = payload.email.lower().strip()
     existing = db.query(Student).filter(Student.email == email).first()
     if existing is not None:
         raise HTTPException(status_code=400, detail="Email already registered")
+
+    if not get_otp_enabled(db):
+        user = Student(
+            email=email,
+            password_hash=hash_password(payload.password),
+            name=(payload.name or "").strip(),
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        token = create_access_token(role="student", subject_id=user.id)
+        return TokenResponse(access_token=token)
 
     payload_data = json.dumps({
         "password_hash": hash_password(payload.password),
@@ -271,12 +310,20 @@ async def student_signup(payload: StudentSignup, db: Session = Depends(get_db)) 
     return OTPSentResponse(email=email)
 
 
-@app.post("/auth/student/login", response_model=OTPSentResponse)
-async def student_login(payload: StudentLogin, db: Session = Depends(get_db)) -> OTPSentResponse:
+@app.post("/auth/student/login", response_model=None)
+async def student_login(payload: StudentLogin, db: Session = Depends(get_db)):
     email = payload.email.lower().strip()
     student = db.query(Student).filter(Student.email == email).first()
     if student is None:
         raise HTTPException(status_code=401, detail="No account found with this email")
+
+    if not get_otp_enabled(db):
+        if not payload.password:
+            raise HTTPException(status_code=400, detail="Password is required")
+        if not verify_password(payload.password, student.password_hash):
+            raise HTTPException(status_code=401, detail="Invalid password")
+        token = create_access_token(role="student", subject_id=student.id)
+        return TokenResponse(access_token=token)
 
     otp_record = create_otp_record(db, email=email, purpose="login", role="student")
     await send_otp_email(email, otp_record.otp_code)
@@ -645,3 +692,13 @@ def remove_student(
     if not delete_student(db, student_id=student_id):
         raise HTTPException(status_code=404, detail="Student not found")
     return {"detail": "Student deleted"}
+
+
+@app.put("/admin/otp-settings", response_model=OTPSettingsResponse)
+def update_otp_settings(
+    payload: OTPSettingsUpdate,
+    db: Session = Depends(get_db),
+    _principal: AuthPrincipal = Depends(require_admin),
+) -> OTPSettingsResponse:
+    new_val = set_otp_enabled(db, enabled=payload.otp_enabled)
+    return OTPSettingsResponse(otp_enabled=new_val)

@@ -38,6 +38,11 @@ export const loginSchema = z.object({
   email: emailSchema,
 });
 
+export const loginWithPasswordSchema = z.object({
+  email: emailSchema,
+  password: passwordSchema,
+});
+
 export const otpSchema = z
   .string()
   .length(6, "OTP must be exactly 6 digits")

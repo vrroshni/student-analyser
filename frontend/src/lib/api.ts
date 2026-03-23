@@ -72,3 +72,15 @@ export async function resendOTP(data: {
 export async function adminLogin(data: { email: string; password: string }) {
   return api.post<TokenResponse>("/auth/admin/login", data);
 }
+
+// OTP settings
+
+export type OTPSettingsResponse = { otp_enabled: boolean };
+
+export async function getOTPStatus() {
+  return api.get<OTPSettingsResponse>("/auth/otp-status");
+}
+
+export async function updateOTPSettings(otp_enabled: boolean) {
+  return api.put<OTPSettingsResponse>("/admin/otp-settings", { otp_enabled });
+}

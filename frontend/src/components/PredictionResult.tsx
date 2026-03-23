@@ -54,11 +54,16 @@ function buildExplanation(result: PredictionOutput, contributions: PredictionOut
 
 export function PredictionResult({
   result,
-  loading
+  loading,
+  userRole,
+  onTryAlternate,
 }: {
   result: PredictionOutput | null;
   loading?: boolean;
+  userRole?: "teacher" | "student" | "admin" | null;
+  onTryAlternate?: () => void;
 }) {
+  const isAdmin = userRole === "admin";
   if (loading) {
     return (
       <Card className="border-border/70 bg-card/60 backdrop-blur">
@@ -119,15 +124,37 @@ export function PredictionResult({
       <CardHeader>
         <CardTitle>Prediction</CardTitle>
         <CardDescription>
-          Model: <span className="font-medium">{result.model_used}</span> · Confidence:{" "}
-          <span className="font-medium">{Math.round(result.confidence * 100)}%</span>
-          {result.model_accuracy != null && (
+          {isAdmin ? (
             <>
-              {" "}· Model Accuracy:{" "}
-              <span className="font-medium">{Math.round(result.model_accuracy * 100)}%</span>
+              Model: <span className="font-medium">{result.model_used}</span> · Confidence:{" "}
+              <span className="font-medium">{Math.round(result.confidence * 100)}%</span>
+              {result.model_accuracy != null && (
+                <>
+                  {" "}· Model Accuracy:{" "}
+                  <span className="font-medium">{Math.round(result.model_accuracy * 100)}%</span>
+                </>
+              )}
+            </>
+          ) : (
+            <>
+              {result.model_used.toLowerCase().includes("random forest") ? "Approach 1" : "Alternate Approach"}
+              {" "}· Confidence:{" "}
+              <span className="font-medium">{Math.round(result.confidence * 100)}%</span>
             </>
           )}
         </CardDescription>
+        {!isAdmin && onTryAlternate && (
+          <div
+            className="mt-2 cursor-pointer rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-sm text-primary hover:bg-primary/10 transition-colors"
+            onClick={onTryAlternate}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onTryAlternate(); }}
+          >
+            <span className="font-medium">Want to test it again?</span>{" "}
+            Try an alternate approach &rarr;
+          </div>
+        )}
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex items-center gap-2">
@@ -260,9 +287,6 @@ export function PredictionResult({
           </div>
         </div>
 
-        {/* <div className="text-xs text-muted-foreground">
-          Note: For DL, contributions may be slower/approx depending on SHAP availability.
-        </div> */}
       </CardContent>
     </Card>
   );

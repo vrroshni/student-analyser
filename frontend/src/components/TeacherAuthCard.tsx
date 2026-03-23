@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { api, verifyOTP, resendOTP } from "@/lib/api";
-import { signupSchema, loginSchema, otpSchema } from "@/lib/validation";
+import { api, verifyOTP, resendOTP, getOTPStatus } from "@/lib/api";
+import { signupSchema, loginSchema, loginWithPasswordSchema, otpSchema } from "@/lib/validation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -24,12 +24,22 @@ export function AuthCard({
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
 
+  // OTP toggle state
+  const [otpEnabled, setOtpEnabled] = useState<boolean>(false);
+
   // OTP state
   const [step, setStep] = useState<"form" | "otp">("form");
   const [otpCode, setOtpCode] = useState<string>("");
   const [otpEmail, setOtpEmail] = useState<string>("");
   const [resendCooldown, setResendCooldown] = useState<number>(0);
   const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Fetch OTP status on mount
+  useEffect(() => {
+    getOTPStatus()
+      .then((res) => setOtpEnabled(res.data.otp_enabled))
+      .catch(() => {});
+  }, []);
 
   // Reset to form step when switching role or mode
   useEffect(() => {
@@ -63,8 +73,8 @@ export function AuthCard({
 
   // Real-time validation for touched fields
   const liveErrors = useMemo(() => {
-    const schema = mode === "signup" ? signupSchema : loginSchema;
-    const data = mode === "signup" ? { email, password, name } : { email };
+    const schema = mode === "signup" ? signupSchema : otpEnabled ? loginSchema : loginWithPasswordSchema;
+    const data = mode === "signup" ? { email, password, name } : otpEnabled ? { email } : { email, password };
     const result = schema.safeParse(data);
     if (result.success) return {};
     const errors: Record<string, string> = {};
@@ -73,13 +83,13 @@ export function AuthCard({
       if (!errors[key]) errors[key] = issue.message;
     });
     return errors;
-  }, [email, password, name, mode]);
+  }, [email, password, name, mode, otpEnabled]);
 
   const canSubmit = useMemo(() => {
-    const schema = mode === "signup" ? signupSchema : loginSchema;
-    const data = mode === "signup" ? { email, password, name } : { email };
+    const schema = mode === "signup" ? signupSchema : otpEnabled ? loginSchema : loginWithPasswordSchema;
+    const data = mode === "signup" ? { email, password, name } : otpEnabled ? { email } : { email, password };
     return schema.safeParse(data).success;
-  }, [email, password, name, mode]);
+  }, [email, password, name, mode, otpEnabled]);
 
   function handleBlur(field: string) {
     setTouched((prev) => ({ ...prev, [field]: true }));
@@ -94,8 +104,8 @@ export function AuthCard({
 
   async function submit() {
     // Run full validation
-    const schema = mode === "signup" ? signupSchema : loginSchema;
-    const data = mode === "signup" ? { email, password, name } : { email };
+    const schema = mode === "signup" ? signupSchema : otpEnabled ? loginSchema : loginWithPasswordSchema;
+    const data = mode === "signup" ? { email, password, name } : otpEnabled ? { email } : { email, password };
     const result = schema.safeParse(data);
     if (!result.success) {
       const errors: Record<string, string> = {};
@@ -125,13 +135,21 @@ export function AuthCard({
       const payload =
         mode === "signup"
           ? { email, password, name }
-          : { email };
+          : otpEnabled
+            ? { email }
+            : { email, password };
 
-      await api.post(url, payload);
-      // Backend returns OTPSentResponse — transition to OTP step
-      setOtpEmail(email);
-      setStep("otp");
-      startResendCooldown();
+      const res = await api.post(url, payload);
+
+      if (res.data.access_token) {
+        // OTP disabled: direct auth
+        onAuthed(res.data.access_token);
+      } else {
+        // OTP enabled: transition to OTP step
+        setOtpEmail(email);
+        setStep("otp");
+        startResendCooldown();
+      }
     } catch (e: any) {
       const detail = e?.response?.data?.detail;
       if (Array.isArray(detail)) {
@@ -304,10 +322,27 @@ export function AuthCard({
               {getFieldError("email") && (
                 <div className="text-xs text-destructive">{getFieldError("email")}</div>
               )}
-              <div className="text-xs text-muted-foreground">
-                We'll send a verification code to your email.
-              </div>
+              {otpEnabled && (
+                <div className="text-xs text-muted-foreground">
+                  We'll send a verification code to your email.
+                </div>
+              )}
             </div>
+            {!otpEnabled && (
+              <div className="space-y-2">
+                <div className="text-sm font-medium">Password</div>
+                <Input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onBlur={() => handleBlur("password")}
+                  placeholder="Enter your password"
+                />
+                {getFieldError("password") && (
+                  <div className="text-xs text-destructive">{getFieldError("password")}</div>
+                )}
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="signup" className="space-y-4">
@@ -361,7 +396,7 @@ export function AuthCard({
         </Tabs>
 
         <Button className="w-full" disabled={!canSubmit || loading} onClick={submit}>
-          {loading ? "Please wait..." : mode === "signup" ? "Create account" : "Send OTP"}
+          {loading ? "Please wait..." : mode === "signup" ? "Create account" : otpEnabled ? "Send OTP" : "Login"}
         </Button>
 
         <div className="text-xs text-muted-foreground">

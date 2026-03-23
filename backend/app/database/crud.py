@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.schemas import StudentInput
 
-from .models import CsvStudent, PredictionRecord, Student, Teacher
+from .models import AppSettings, CsvStudent, PredictionRecord, Student, Teacher
 
 
 def create_prediction_record(
@@ -148,3 +148,19 @@ def list_csv_students_for_teacher(
         .order_by(desc(CsvStudent.created_at))
     )
     return list(db.scalars(stmt).all())
+
+
+def get_otp_enabled(db: Session) -> bool:
+    row = db.query(AppSettings).filter(AppSettings.id == 1).first()
+    return bool(row.otp_enabled) if row else False
+
+
+def set_otp_enabled(db: Session, *, enabled: bool) -> bool:
+    row = db.query(AppSettings).filter(AppSettings.id == 1).first()
+    if row is None:
+        row = AppSettings(id=1, otp_enabled=enabled)
+        db.add(row)
+    else:
+        row.otp_enabled = enabled
+    db.commit()
+    return bool(row.otp_enabled)

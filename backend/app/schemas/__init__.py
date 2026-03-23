@@ -1,6 +1,8 @@
 from .auth import (
     AdminLogin,
     OTPSentResponse,
+    OTPSettingsResponse,
+    OTPSettingsUpdate,
     OTPVerifyRequest,
     ResendOTPRequest,
     StudentLogin,
@@ -22,6 +24,8 @@ __all__ = [
     "AdminLogin",
     "TokenResponse",
     "OTPSentResponse",
+    "OTPSettingsResponse",
+    "OTPSettingsUpdate",
     "OTPVerifyRequest",
     "ResendOTPRequest",
 ]

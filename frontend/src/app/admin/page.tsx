@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import { adminLogin, api } from "@/lib/api";
+import { adminLogin, api, getOTPStatus, updateOTPSettings } from "@/lib/api";
 import { adminLoginSchema } from "@/lib/validation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -44,6 +44,9 @@ export default function AdminPage() {
   const [students, setStudents] = useState<UserRecord[]>([]);
   const [dashLoading, setDashLoading] = useState(false);
 
+  const [otpEnabled, setOtpEnabled] = useState<boolean>(false);
+  const [otpToggleLoading, setOtpToggleLoading] = useState(false);
+
   const [result, setResult] = useState<PredictionOutput | null>(null);
   const [predictError, setPredictError] = useState("");
   const [predictLoading, setPredictLoading] = useState(false);
@@ -58,10 +61,11 @@ export default function AdminPage() {
   useEffect(() => {
     if (!token) return;
     setDashLoading(true);
-    Promise.all([api.get("/admin/teachers"), api.get("/admin/students")])
-      .then(([tRes, sRes]) => {
+    Promise.all([api.get("/admin/teachers"), api.get("/admin/students"), getOTPStatus()])
+      .then(([tRes, sRes, otpRes]) => {
         setTeachers(tRes.data);
         setStudents(sRes.data);
+        setOtpEnabled(otpRes.data.otp_enabled);
       })
       .catch(() => {
         setError("Failed to load user data");
@@ -109,6 +113,18 @@ export default function AdminPage() {
     } catch (e: any) {
       const detail = e?.response?.data?.detail;
       setError(typeof detail === "string" ? detail : "Failed to delete student");
+    }
+  }
+
+  async function handleToggleOTP() {
+    setOtpToggleLoading(true);
+    try {
+      const res = await updateOTPSettings(!otpEnabled);
+      setOtpEnabled(res.data.otp_enabled);
+    } catch {
+      setError("Failed to update OTP setting");
+    } finally {
+      setOtpToggleLoading(false);
     }
   }
 
@@ -195,6 +211,38 @@ export default function AdminPage() {
               <div className="mt-10 text-center text-muted-foreground">Loading...</div>
             ) : (
               <div className="mt-2 space-y-8">
+                {/* Settings */}
+                <Card className="border-border/70 bg-card/60 backdrop-blur">
+                  <CardHeader>
+                    <CardTitle>Settings</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-sm font-medium">OTP Verification</div>
+                        <div className="text-xs text-muted-foreground">
+                          {otpEnabled
+                            ? "Users verify their identity via email OTP"
+                            : "Users login with email and password directly"}
+                        </div>
+                      </div>
+                      <button
+                        onClick={handleToggleOTP}
+                        disabled={otpToggleLoading}
+                        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 ${
+                          otpEnabled ? "bg-primary" : "bg-muted"
+                        }`}
+                      >
+                        <span
+                          className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                            otpEnabled ? "translate-x-5" : "translate-x-0"
+                          }`}
+                        />
+                      </button>
+                    </div>
+                  </CardContent>
+                </Card>
+
                 {/* Teachers */}
                 <Card className="border-border/70 bg-card/60 backdrop-blur">
                   <CardHeader>

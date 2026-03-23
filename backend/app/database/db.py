@@ -75,3 +75,10 @@ def init_db() -> None:
         # Drop the age column (no longer used as a prediction feature)
         if "age" in existing:
             conn.execute(text("ALTER TABLE prediction_records DROP COLUMN age"))
+
+    # Ensure app_settings has exactly one row
+    from .models import AppSettings
+    with SessionLocal() as session:
+        if session.query(AppSettings).first() is None:
+            session.add(AppSettings(id=1, otp_enabled=False))
+            session.commit()
