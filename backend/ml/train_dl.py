@@ -76,6 +76,13 @@ def main() -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     model.save(out_dir / "dl_model.keras")
+
+    # Export TFLite version for environments without full TensorFlow
+    import tensorflow as tf
+    converter = tf.lite.TFLiteConverter.from_keras_model(model)
+    tflite_model = converter.convert()
+    (out_dir / "dl_model.tflite").write_bytes(tflite_model)
+
     joblib.dump(scaler, out_dir / "scaler.joblib")
 
     with (out_dir / "label_map.json").open("w", encoding="utf-8") as f:

@@ -19,6 +19,11 @@ try:
 except Exception:  # pragma: no cover
     keras = None
 
+try:
+    import tflite_runtime.interpreter as tflite
+except Exception:  # pragma: no cover
+    tflite = None
+
 
 FEATURES: List[str] = [
     *[
@@ -61,6 +66,7 @@ class PredictorService:
         self._ml_accuracy: float | None = None
 
         self._dl_model = None
+        self._dl_use_tflite = False
         self._dl_scaler = None
         self._dl_label_map: Dict[int, str] | None = None
         self._dl_background: np.ndarray | None = None
@@ -110,22 +116,34 @@ class PredictorService:
         if self._dl_loaded:
             return
 
-        if keras is None:
-            raise ModelArtifactsNotFound(
-                "TensorFlow is not installed/available. Install backend requirements and re-try."
-            )
-
-        model_path = self.models_dir / "dl_model.keras"
         scaler_path = self.models_dir / "scaler.joblib"
         label_map_path = self.models_dir / "label_map.json"
         background_path = self.models_dir / "background.npy"
+        keras_path = self.models_dir / "dl_model.keras"
+        tflite_path = self.models_dir / "dl_model.tflite"
 
-        if not model_path.exists() or not scaler_path.exists() or not label_map_path.exists():
+        # Try full Keras first, then TFLite fallback
+        if keras is not None and keras_path.exists():
+            if not scaler_path.exists() or not label_map_path.exists():
+                raise ModelArtifactsNotFound(
+                    "DL artifacts not found. Run: python backend/ml/train_dl.py"
+                )
+            self._dl_model = keras.models.load_model(keras_path)
+            self._dl_use_tflite = False
+        elif tflite is not None and tflite_path.exists():
+            if not scaler_path.exists() or not label_map_path.exists():
+                raise ModelArtifactsNotFound(
+                    "DL artifacts not found. Run: python backend/ml/train_dl.py"
+                )
+            interpreter = tflite.Interpreter(model_path=str(tflite_path))
+            interpreter.allocate_tensors()
+            self._dl_model = interpreter
+            self._dl_use_tflite = True
+        else:
             raise ModelArtifactsNotFound(
-                "DL artifacts not found. Run: python backend/ml/train_dl.py"
+                "DL model not found. Ensure dl_model.keras or dl_model.tflite exists."
             )
 
-        self._dl_model = keras.models.load_model(model_path)
         self._dl_scaler = joblib.load(scaler_path)
         self._dl_label_map = self._load_label_map(label_map_path)
         self._dl_background = self._load_background(background_path)
@@ -166,7 +184,16 @@ class PredictorService:
         x = self._vectorize(payload)
         x_scaled = self._dl_scaler.transform(x)
 
-        proba = self._dl_model.predict(x_scaled, verbose=0)[0]
+        if self._dl_use_tflite:
+            interpreter = self._dl_model
+            input_details = interpreter.get_input_details()
+            output_details = interpreter.get_output_details()
+            interpreter.set_tensor(input_details[0]["index"], x_scaled.astype(np.float32))
+            interpreter.invoke()
+            proba = interpreter.get_tensor(output_details[0]["index"])[0]
+        else:
+            proba = self._dl_model.predict(x_scaled, verbose=0)[0]
+
         class_idx = int(np.argmax(proba))
         confidence = float(proba[class_idx])
         prediction = self._dl_label_map[class_idx]
