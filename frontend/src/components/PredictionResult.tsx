@@ -342,9 +342,9 @@ export function PredictionResult({
                       dataKey="percentage"
                       name="Percentage"
                       stroke="hsl(var(--chart-1))"
-                      strokeWidth={2.5}
-                      dot={{ r: 4, strokeWidth: 2, stroke: "hsl(var(--chart-1))", fill: "hsl(var(--background))" }}
-                      activeDot={{ r: 7, strokeWidth: 2, stroke: "#fff", fill: "hsl(var(--chart-1))" }}
+                      strokeWidth={3}
+                      dot={{ r: 5, strokeWidth: 0, fill: "hsl(var(--chart-1))" }}
+                      activeDot={{ r: 8, strokeWidth: 2, stroke: "#fff", fill: "hsl(var(--chart-1))" }}
                     />
                   </LineChart>
                 </ChartContainer>
