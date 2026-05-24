@@ -5,7 +5,7 @@ import type { PredictionOutput } from "./StudentForm";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
+import { ChartContainer, ChartTooltip, type TooltipExtraRow, type TooltipStatusChip } from "@/components/ui/chart";
 import { Bar, BarChart, CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 
 function dotClassFor(prediction: string): string {
@@ -73,6 +73,61 @@ function marksTone(avg: number): { tone: "good" | "warn" | "bad"; label: string;
     tile: "border-rose-500/30 bg-rose-500/10",
     text: "text-rose-300"
   };
+}
+
+type SemesterRow = {
+  semester: string;
+  percentage: number;
+  attendance: number;
+  internal: number;
+  university: number;
+};
+
+function percentageTooltipRows(row: SemesterRow): TooltipExtraRow[] {
+  const total = row.internal + row.university;
+  return [
+    { label: "Internal", value: `${row.internal} / 300` },
+    { label: "University", value: `${row.university} / 300` },
+    { label: "Total", value: `${total} / 600` },
+    { label: "Attendance", value: `${row.attendance.toFixed(1)}%` }
+  ];
+}
+
+function percentageTooltipChip(row: SemesterRow): TooltipStatusChip {
+  if (row.percentage >= MARKS_STANDARD) return { label: "Meets 85% standard", tone: "good" };
+  if (row.percentage >= 70) return { label: "Below 85% standard", tone: "warn" };
+  return { label: "Marks critically low", tone: "bad" };
+}
+
+function attendanceTooltipRows(row: SemesterRow): TooltipExtraRow[] {
+  const total = row.internal + row.university;
+  return [
+    { label: "Marks", value: `${row.percentage.toFixed(1)}%` },
+    { label: "Internal", value: `${row.internal} / 300` },
+    { label: "University", value: `${row.university} / 300` },
+    { label: "Total", value: `${total} / 600` }
+  ];
+}
+
+function attendanceTooltipChip(row: SemesterRow): TooltipStatusChip {
+  if (row.attendance >= ATTENDANCE_STANDARD) return { label: "Meets 80% standard", tone: "good" };
+  if (row.attendance >= 60) return { label: "Below 80% standard", tone: "warn" };
+  return { label: "Attendance critically low", tone: "bad" };
+}
+
+function marksTooltipRows(row: SemesterRow): TooltipExtraRow[] {
+  const total = row.internal + row.university;
+  return [
+    { label: "Total", value: `${total} / 600` },
+    { label: "Percentage", value: `${row.percentage.toFixed(1)}%` },
+    { label: "Attendance", value: `${row.attendance.toFixed(1)}%` }
+  ];
+}
+
+function marksTooltipChip(row: SemesterRow): TooltipStatusChip {
+  if (row.percentage >= MARKS_STANDARD) return { label: "Meets 85% standard", tone: "good" };
+  if (row.percentage >= 70) return { label: "Below 85% standard", tone: "warn" };
+  return { label: "Marks critically low", tone: "bad" };
 }
 
 function buildExplanation(result: PredictionOutput, contributions: PredictionOutput["feature_contributions"]): string {
@@ -278,7 +333,10 @@ export function PredictionResult({
                     <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
                     <XAxis dataKey="semester" tickLine={false} axisLine={false} />
                     <YAxis domain={[0, 100]} tickLine={false} axisLine={false} />
-                    <ChartTooltip />
+                    <ChartTooltip
+                      extraRows={percentageTooltipRows}
+                      statusChip={percentageTooltipChip}
+                    />
                     <Line
                       type="monotone"
                       dataKey="percentage"
@@ -302,7 +360,10 @@ export function PredictionResult({
                     <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
                     <XAxis dataKey="semester" tickLine={false} axisLine={false} />
                     <YAxis domain={[0, 100]} tickLine={false} axisLine={false} />
-                    <ChartTooltip />
+                    <ChartTooltip
+                      extraRows={attendanceTooltipRows}
+                      statusChip={attendanceTooltipChip}
+                    />
                     <Line
                       type="monotone"
                       dataKey="attendance"
@@ -327,8 +388,12 @@ export function PredictionResult({
                     <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
                     <XAxis dataKey="semester" tickLine={false} axisLine={false} />
                     <YAxis domain={[0, 600]} tickLine={false} axisLine={false} />
-                    <ChartTooltip />
-                    <Bar dataKey="internal" name="Internal" stackId="a" fill="hsl(var(--chart-3))" radius={[4, 4, 0, 0]} />
+                    <ChartTooltip
+                      cursor={{ fill: "hsl(var(--primary))", fillOpacity: 0.08 }}
+                      extraRows={marksTooltipRows}
+                      statusChip={marksTooltipChip}
+                    />
+                    <Bar dataKey="internal" name="Internal" stackId="a" fill="hsl(var(--chart-3))" radius={[0, 0, 0, 0]} />
                     <Bar dataKey="university" name="University" stackId="a" fill="hsl(var(--chart-4))" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ChartContainer>
