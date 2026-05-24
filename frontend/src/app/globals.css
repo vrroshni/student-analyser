@@ -32,6 +32,16 @@
   --ring: 224.3 76.3% 48%;
 
   --radius: 0.75rem;
+
+  /* Chart palette — vibrant on dark */
+  --chart-1: 258 90% 70%;   /* violet  #a78bfa — percentage */
+  --chart-2: 172 70% 50%;   /* teal    #2dd4bf — attendance */
+  --chart-3: 42 96% 60%;    /* amber   #fbbf24 — internal */
+  --chart-4: 330 80% 70%;   /* pink    #f472b6 — university */
+
+  /* Gradient accents */
+  --accent-from: 258 90% 66%;   /* violet */
+  --accent-to:   190 95% 55%;   /* cyan   */
 }
 
 body {

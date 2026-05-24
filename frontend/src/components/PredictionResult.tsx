@@ -10,16 +10,69 @@ import { Bar, BarChart, CartesianGrid, Line, LineChart, XAxis, YAxis } from "rec
 
 function dotClassFor(prediction: string): string {
   const p = prediction.toLowerCase();
+  if (p.includes("best")) return "bg-violet-400";
   if (p.includes("good")) return "bg-emerald-400";
-  if (p.includes("average")) return "bg-amber-400";
   return "bg-rose-400";
 }
 
-function badgeVariantFor(prediction: string): "success" | "warning" | "danger" {
+function badgeVariantFor(prediction: string): "best" | "success" | "danger" {
   const p = prediction.toLowerCase();
+  if (p.includes("best")) return "best";
   if (p.includes("good")) return "success";
-  if (p.includes("average")) return "warning";
   return "danger";
+}
+
+const ATTENDANCE_STANDARD = 80;
+const MARKS_STANDARD = 85;
+
+function attendanceTone(avg: number): { tone: "good" | "warn" | "bad"; label: string; tile: string; text: string } {
+  if (avg >= ATTENDANCE_STANDARD) {
+    return {
+      tone: "good",
+      label: "Meets 80% standard",
+      tile: "border-emerald-500/30 bg-emerald-500/10",
+      text: "text-emerald-300"
+    };
+  }
+  if (avg >= 60) {
+    return {
+      tone: "warn",
+      label: "Below 80% standard",
+      tile: "border-amber-500/30 bg-amber-500/10",
+      text: "text-amber-300"
+    };
+  }
+  return {
+    tone: "bad",
+    label: "Critically low attendance",
+    tile: "border-rose-500/30 bg-rose-500/10",
+    text: "text-rose-300"
+  };
+}
+
+function marksTone(avg: number): { tone: "good" | "warn" | "bad"; label: string; tile: string; text: string } {
+  if (avg >= MARKS_STANDARD) {
+    return {
+      tone: "good",
+      label: "Meets 85% standard",
+      tile: "border-emerald-500/30 bg-emerald-500/10",
+      text: "text-emerald-300"
+    };
+  }
+  if (avg >= 70) {
+    return {
+      tone: "warn",
+      label: "Below 85% standard",
+      tile: "border-amber-500/30 bg-amber-500/10",
+      text: "text-amber-300"
+    };
+  }
+  return {
+    tone: "bad",
+    label: "Marks need urgent attention",
+    tile: "border-rose-500/30 bg-rose-500/10",
+    text: "text-rose-300"
+  };
 }
 
 function buildExplanation(result: PredictionOutput, contributions: PredictionOutput["feature_contributions"]): string {
@@ -119,8 +172,17 @@ export function PredictionResult({
     };
   });
 
+  const avgAttendance = chartData.length
+    ? chartData.reduce((acc, d) => acc + d.attendance, 0) / chartData.length
+    : 0;
+  const avgMarksPct = chartData.length
+    ? chartData.reduce((acc, d) => acc + d.percentage, 0) / chartData.length
+    : 0;
+  const attTone = attendanceTone(avgAttendance);
+  const marksToneInfo = marksTone(avgMarksPct);
+
   return (
-    <Card className="border-border/70 bg-card/60 backdrop-blur">
+    <Card className="border-border/70 bg-card/60 backdrop-blur transition-shadow hover:shadow-lg hover:shadow-violet-500/10">
       <CardHeader>
         <CardTitle>Prediction</CardTitle>
         <CardDescription>
@@ -173,6 +235,25 @@ export function PredictionResult({
           </div>
         </div>
 
+        {chartData.length > 0 && (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className={`rounded-lg border px-4 py-3 ${attTone.tile}`}>
+              <div className="flex items-baseline justify-between gap-2">
+                <div className="text-xs uppercase tracking-wide text-muted-foreground">Avg Attendance</div>
+                <div className={`text-2xl font-bold ${attTone.text}`}>{avgAttendance.toFixed(1)}%</div>
+              </div>
+              <div className={`mt-1 text-xs ${attTone.text}`}>{attTone.label}</div>
+            </div>
+            <div className={`rounded-lg border px-4 py-3 ${marksToneInfo.tile}`}>
+              <div className="flex items-baseline justify-between gap-2">
+                <div className="text-xs uppercase tracking-wide text-muted-foreground">Avg Marks</div>
+                <div className={`text-2xl font-bold ${marksToneInfo.text}`}>{avgMarksPct.toFixed(1)}%</div>
+              </div>
+              <div className={`mt-1 text-xs ${marksToneInfo.text}`}>{marksToneInfo.label}</div>
+            </div>
+          </div>
+        )}
+
         <div className="rounded-lg border border-border/70 bg-background/40 px-4 py-3 text-sm text-muted-foreground">
           {buildExplanation(result, filteredContributions)}
         </div>
@@ -190,10 +271,10 @@ export function PredictionResult({
               <TabsContent value="percentage">
                 <ChartContainer
                   config={{
-                    percentage: { label: "Percentage", color: "hsl(var(--chart-1, 210 100% 66%))" }
+                    percentage: { label: "Percentage", color: "hsl(var(--chart-1))" }
                   }}
                 >
-                  <LineChart data={chartData} margin={{ left: 8, right: 8, top: 8, bottom: 8 }}>
+                  <LineChart data={chartData} margin={{ left: 8, right: 8, top: 12, bottom: 8 }}>
                     <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
                     <XAxis dataKey="semester" tickLine={false} axisLine={false} />
                     <YAxis domain={[0, 100]} tickLine={false} axisLine={false} />
@@ -201,10 +282,11 @@ export function PredictionResult({
                     <Line
                       type="monotone"
                       dataKey="percentage"
-                      name="%"
-                      stroke="#60a5fa"
-                      strokeWidth={2}
-                      dot={{ r: 3 }}
+                      name="Percentage"
+                      stroke="hsl(var(--chart-1))"
+                      strokeWidth={2.5}
+                      dot={{ r: 4, strokeWidth: 2, stroke: "hsl(var(--chart-1))", fill: "hsl(var(--background))" }}
+                      activeDot={{ r: 7, strokeWidth: 2, stroke: "#fff", fill: "hsl(var(--chart-1))" }}
                     />
                   </LineChart>
                 </ChartContainer>
@@ -213,10 +295,10 @@ export function PredictionResult({
               <TabsContent value="attendance">
                 <ChartContainer
                   config={{
-                    attendance: { label: "Attendance", color: "hsl(var(--chart-2, 164 100% 40%))" }
+                    attendance: { label: "Attendance", color: "hsl(var(--chart-2))" }
                   }}
                 >
-                  <LineChart data={chartData} margin={{ left: 8, right: 8, top: 8, bottom: 8 }}>
+                  <LineChart data={chartData} margin={{ left: 8, right: 8, top: 12, bottom: 8 }}>
                     <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
                     <XAxis dataKey="semester" tickLine={false} axisLine={false} />
                     <YAxis domain={[0, 100]} tickLine={false} axisLine={false} />
@@ -224,10 +306,11 @@ export function PredictionResult({
                     <Line
                       type="monotone"
                       dataKey="attendance"
-                      name="Attendance %"
-                      stroke="#34d399"
-                      strokeWidth={2}
-                      dot={{ r: 3 }}
+                      name="Attendance"
+                      stroke="hsl(var(--chart-2))"
+                      strokeWidth={2.5}
+                      dot={{ r: 4, strokeWidth: 2, stroke: "hsl(var(--chart-2))", fill: "hsl(var(--background))" }}
+                      activeDot={{ r: 7, strokeWidth: 2, stroke: "#fff", fill: "hsl(var(--chart-2))" }}
                     />
                   </LineChart>
                 </ChartContainer>
@@ -236,17 +319,17 @@ export function PredictionResult({
               <TabsContent value="marks">
                 <ChartContainer
                   config={{
-                    internal: { label: "Internal", color: "hsl(var(--chart-3, 48 100% 60%))" },
-                    university: { label: "University", color: "hsl(var(--chart-4, 330 100% 70%))" }
+                    internal: { label: "Internal", color: "hsl(var(--chart-3))" },
+                    university: { label: "University", color: "hsl(var(--chart-4))" }
                   }}
                 >
-                  <BarChart data={chartData} margin={{ left: 8, right: 8, top: 8, bottom: 8 }}>
+                  <BarChart data={chartData} margin={{ left: 8, right: 8, top: 12, bottom: 8 }}>
                     <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
                     <XAxis dataKey="semester" tickLine={false} axisLine={false} />
                     <YAxis domain={[0, 600]} tickLine={false} axisLine={false} />
                     <ChartTooltip />
-                    <Bar dataKey="internal" name="Internal" stackId="a" fill="#fbbf24" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="university" name="University" stackId="a" fill="#fb7185" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="internal" name="Internal" stackId="a" fill="hsl(var(--chart-3))" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="university" name="University" stackId="a" fill="hsl(var(--chart-4))" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ChartContainer>
               </TabsContent>

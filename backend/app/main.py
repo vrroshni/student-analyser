@@ -85,10 +85,10 @@ def _rule_score(student: StudentInput) -> float:
 
 
 def _rule_label(score: float) -> str:
-    if score >= 75:
+    if score >= 90:
+        return "Best"
+    if score >= 80:
         return "Good"
-    if score >= 55:
-        return "Average"
     return "Needs Attention"
 
 
@@ -145,29 +145,35 @@ def _assess_data_quality(student: StudentInput) -> tuple[bool, float]:
 
 
 def _apply_rule_override(*, student: StudentInput, prediction: str, confidence: float, model_used: str) -> tuple[str, float, str]:
+    # The ML model was trained on Good / Average / Needs Attention. We no longer
+    # surface "Average" — collapse it into the floor band before any rule logic.
+    if prediction == "Average":
+        prediction = "Needs Attention"
+
     score = _rule_score(student)
     label = _rule_label(score)
-    
+
+    order = {"Needs Attention": 0, "Good": 1, "Best": 2}
+
     # Assess data quality
     is_suspicious, quality_score = _assess_data_quality(student)
-    
+
     # If data quality is poor, adjust confidence and potentially downgrade prediction
     if is_suspicious:
         # Reduce confidence based on quality score
         confidence = confidence * quality_score
-        
-        # For very poor quality data (quality_score < 0.6), force to "Needs Attention"
+
+        # For very poor quality data, force to "Needs Attention"
         if quality_score < 0.6:
             return "Needs Attention", confidence, f"{model_used} + Quality Check"
-        
-        # For moderately poor quality (0.6 <= quality_score < 0.8), cap at "Average"
+
+        # For moderately poor quality, cap "Best" down to "Good" — don't yank
+        # "Good" all the way to "Needs Attention" when the score still cleared 80.
         if quality_score < 0.8:
-            order = {"Needs Attention": 0, "Average": 1, "Good": 2}
-            if order.get(prediction, 0) > 1:  # If predicted "Good"
-                return "Average", confidence, f"{model_used} + Quality Check"
+            if order.get(prediction, 0) > 1:  # If predicted "Best"
+                return "Good", confidence, f"{model_used} + Quality Check"
 
     # Only override upward when the rule says the student is clearly in a higher band.
-    order = {"Needs Attention": 0, "Average": 1, "Good": 2}
     if order.get(label, 0) > order.get(prediction, 0):
         # Make confidence reflect a deterministic rule.
         return label, max(confidence, 0.95), f"{model_used} + Rules"

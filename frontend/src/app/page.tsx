@@ -84,12 +84,14 @@ export default function Page() {
 
   return (
     <main className="min-h-screen">
-      <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(1000px_500px_at_10%_10%,rgba(59,130,246,0.25),transparent),radial-gradient(900px_450px_at_90%_20%,rgba(20,184,166,0.18),transparent)]" />
+      <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(1000px_500px_at_10%_10%,rgba(167,139,250,0.28),transparent),radial-gradient(900px_450px_at_90%_20%,rgba(45,212,191,0.20),transparent),radial-gradient(700px_400px_at_50%_90%,rgba(96,165,250,0.15),transparent)]" />
 
       <div className="mx-auto max-w-7xl px-4 pb-10 pt-8">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <div className="text-xl font-bold tracking-tight">Edu Predict</div>
+            <div className="bg-gradient-to-r from-violet-400 via-blue-400 to-teal-300 bg-clip-text text-2xl font-extrabold tracking-tight text-transparent">
+              Edu Predict
+            </div>
           </div>
 
           {token ? (

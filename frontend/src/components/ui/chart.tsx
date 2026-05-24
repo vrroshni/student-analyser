@@ -44,27 +44,33 @@ const ChartContainer = React.forwardRef<
 });
 ChartContainer.displayName = "ChartContainer";
 
-function defaultValueFormatter(value: any): string {
-  if (typeof value === "number") return value.toFixed(1);
-  return String(value);
+const PERCENT_KEYS = new Set(["percentage", "attendance"]);
+
+function formatValueForKey(value: any, dataKey: string | undefined): string {
+  if (typeof value !== "number") return String(value);
+  if (dataKey && PERCENT_KEYS.has(dataKey)) {
+    return `${value.toFixed(1)}%`;
+  }
+  // Marks (internal / university / unknown) — whole numbers read cleaner.
+  return `${value.toFixed(0)} marks`;
 }
 
 const ChartTooltipContent = React.forwardRef<
   HTMLDivElement,
   TooltipProps<any, any> & {
     labelFormatter?: (label: any) => React.ReactNode;
-    valueFormatter?: (value: any) => React.ReactNode;
+    valueFormatter?: (value: any, dataKey?: string) => React.ReactNode;
   }
 >(({ active, payload, label, labelFormatter, valueFormatter }, ref) => {
   if (!active || !payload?.length) return null;
 
-  const vf = valueFormatter ?? defaultValueFormatter;
+  const vf = valueFormatter ?? formatValueForKey;
   return (
     <div
       ref={ref}
-      className="rounded-lg border border-border bg-background px-3 py-2 text-xs shadow"
+      className="rounded-lg border border-primary/30 bg-background/95 px-3.5 py-2.5 text-xs shadow-lg shadow-primary/10 backdrop-blur"
     >
-      <div className="mb-1 font-medium">
+      <div className="mb-1.5 font-semibold text-foreground">
         {labelFormatter ? labelFormatter(label) : String(label)}
       </div>
       <div className="space-y-1">
@@ -72,12 +78,12 @@ const ChartTooltipContent = React.forwardRef<
           <div key={p.dataKey} className="flex items-center justify-between gap-6">
             <div className="flex items-center gap-2">
               <span
-                className="inline-block h-2 w-2 rounded"
+                className="inline-block h-2.5 w-2.5 rounded-full"
                 style={{ background: p.color }}
               />
               <span className="text-muted-foreground">{p.name ?? p.dataKey}</span>
             </div>
-            <div className="font-medium">{vf(p.value)}</div>
+            <div className="font-semibold text-foreground">{vf(p.value, p.dataKey)}</div>
           </div>
         ))}
       </div>
@@ -87,7 +93,18 @@ const ChartTooltipContent = React.forwardRef<
 ChartTooltipContent.displayName = "ChartTooltipContent";
 
 function ChartTooltip(props: TooltipProps<any, any>) {
-  return <Tooltip cursor={false} content={<ChartTooltipContent />} {...props} />;
+  return (
+    <Tooltip
+      cursor={{
+        stroke: "hsl(var(--primary))",
+        strokeOpacity: 0.35,
+        strokeWidth: 1,
+        strokeDasharray: "3 3"
+      }}
+      content={<ChartTooltipContent />}
+      {...props}
+    />
+  );
 }
 
 export { ChartContainer, ChartTooltip, ChartTooltipContent };
