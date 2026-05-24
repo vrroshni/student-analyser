@@ -5,7 +5,15 @@ import type { PredictionOutput } from "./StudentForm";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ChartContainer, ChartTooltip, type TooltipExtraRow, type TooltipStatusChip } from "@/components/ui/chart";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  barChartCursor,
+  lineChartCursor,
+  type TooltipExtraRow,
+  type TooltipStatusChip
+} from "@/components/ui/chart";
 import { Bar, BarChart, CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 
 function dotClassFor(prediction: string): string {
@@ -334,8 +342,13 @@ export function PredictionResult({
                     <XAxis dataKey="semester" tickLine={false} axisLine={false} />
                     <YAxis domain={[0, 100]} tickLine={false} axisLine={false} />
                     <ChartTooltip
-                      extraRows={percentageTooltipRows}
-                      statusChip={percentageTooltipChip}
+                      cursor={lineChartCursor}
+                      content={
+                        <ChartTooltipContent
+                          extraRows={percentageTooltipRows}
+                          statusChip={percentageTooltipChip}
+                        />
+                      }
                     />
                     <Line
                       type="monotone"
@@ -361,8 +374,13 @@ export function PredictionResult({
                     <XAxis dataKey="semester" tickLine={false} axisLine={false} />
                     <YAxis domain={[0, 100]} tickLine={false} axisLine={false} />
                     <ChartTooltip
-                      extraRows={attendanceTooltipRows}
-                      statusChip={attendanceTooltipChip}
+                      cursor={lineChartCursor}
+                      content={
+                        <ChartTooltipContent
+                          extraRows={attendanceTooltipRows}
+                          statusChip={attendanceTooltipChip}
+                        />
+                      }
                     />
                     <Line
                       type="monotone"
@@ -389,9 +407,13 @@ export function PredictionResult({
                     <XAxis dataKey="semester" tickLine={false} axisLine={false} />
                     <YAxis domain={[0, 600]} tickLine={false} axisLine={false} />
                     <ChartTooltip
-                      cursor={{ fill: "hsl(var(--primary))", fillOpacity: 0.08 }}
-                      extraRows={marksTooltipRows}
-                      statusChip={marksTooltipChip}
+                      cursor={barChartCursor}
+                      content={
+                        <ChartTooltipContent
+                          extraRows={marksTooltipRows}
+                          statusChip={marksTooltipChip}
+                        />
+                      }
                     />
                     <Bar dataKey="internal" name="Internal" stackId="a" fill="hsl(var(--chart-3))" radius={[0, 0, 0, 0]} />
                     <Bar dataKey="university" name="University" stackId="a" fill="hsl(var(--chart-4))" radius={[4, 4, 0, 0]} />

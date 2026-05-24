@@ -70,100 +70,101 @@ const TONE_CLASSES: Record<TooltipStatusChip["tone"], string> = {
   bad: "border-rose-500/40 bg-rose-500/15 text-rose-200"
 };
 
-type ChartTooltipExtras = {
+type ChartTooltipContentProps = TooltipProps<any, any> & {
   labelFormatter?: (label: any) => React.ReactNode;
   valueFormatter?: (value: any, dataKey?: string) => React.ReactNode;
   extraRows?: (row: any) => TooltipExtraRow[];
   statusChip?: (row: any) => TooltipStatusChip | null | undefined;
 };
 
-const ChartTooltipContent = React.forwardRef<
-  HTMLDivElement,
-  TooltipProps<any, any> & ChartTooltipExtras
->(({ active, payload, label, labelFormatter, valueFormatter, extraRows, statusChip }, ref) => {
-  if (!active || !payload?.length) return null;
+const ChartTooltipContent = React.forwardRef<HTMLDivElement, ChartTooltipContentProps>(
+  ({ active, payload, label, labelFormatter, valueFormatter, extraRows, statusChip }, ref) => {
+    if (!active || !payload?.length) return null;
 
-  const vf = valueFormatter ?? formatValueForKey;
-  const row = payload[0]?.payload;
-  const extras = extraRows && row ? extraRows(row) : [];
-  const chip = statusChip && row ? statusChip(row) : null;
+    const vf = valueFormatter ?? formatValueForKey;
+    const row = payload[0]?.payload;
+    const extras = extraRows && row ? extraRows(row) : [];
+    const chip = statusChip && row ? statusChip(row) : null;
 
-  return (
-    <div
-      ref={ref}
-      className="min-w-[200px] rounded-lg border border-primary/30 bg-background/95 px-3.5 py-2.5 text-xs shadow-lg shadow-primary/10 backdrop-blur"
-    >
-      <div className="mb-1.5 text-sm font-semibold text-foreground">
-        {labelFormatter ? labelFormatter(label) : String(label)}
-      </div>
-
-      <div className="space-y-1">
-        {payload.map((p: any) => (
-          <div key={p.dataKey} className="flex items-center justify-between gap-6">
-            <div className="flex items-center gap-2">
-              <span
-                className="inline-block h-2.5 w-2.5 rounded-full"
-                style={{ background: p.color }}
-              />
-              <span className="text-muted-foreground">{p.name ?? p.dataKey}</span>
-            </div>
-            <div className="font-semibold text-foreground">{vf(p.value, p.dataKey)}</div>
-          </div>
-        ))}
-      </div>
-
-      {extras.length > 0 && (
-        <>
-          <div className="my-2 h-px bg-border/60" />
-          <div className="space-y-1">
-            {extras.map((r, i) => (
-              <div key={i} className="flex items-center justify-between gap-6">
-                <span className="text-muted-foreground">{r.label}</span>
-                <span className="font-medium text-foreground">{r.value}</span>
-              </div>
-            ))}
-          </div>
-        </>
-      )}
-
-      {chip && (
-        <div className="mt-2.5 flex justify-end">
-          <span
-            className={cn(
-              "inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
-              TONE_CLASSES[chip.tone]
-            )}
-          >
-            {chip.label}
-          </span>
+    return (
+      <div
+        ref={ref}
+        className="min-w-[200px] rounded-lg border border-primary/30 bg-background/95 px-3.5 py-2.5 text-xs shadow-lg shadow-primary/10 backdrop-blur"
+      >
+        <div className="mb-1.5 text-sm font-semibold text-foreground">
+          {labelFormatter ? labelFormatter(label) : String(label)}
         </div>
-      )}
-    </div>
-  );
-});
+
+        <div className="space-y-1">
+          {payload.map((p: any) => (
+            <div key={p.dataKey} className="flex items-center justify-between gap-6">
+              <div className="flex items-center gap-2">
+                <span
+                  className="inline-block h-2.5 w-2.5 rounded-full"
+                  style={{ background: p.color }}
+                />
+                <span className="text-muted-foreground">{p.name ?? p.dataKey}</span>
+              </div>
+              <div className="font-semibold text-foreground">{vf(p.value, p.dataKey)}</div>
+            </div>
+          ))}
+        </div>
+
+        {extras.length > 0 && (
+          <>
+            <div className="my-2 h-px bg-border/60" />
+            <div className="space-y-1">
+              {extras.map((r, i) => (
+                <div key={i} className="flex items-center justify-between gap-6">
+                  <span className="text-muted-foreground">{r.label}</span>
+                  <span className="font-medium text-foreground">{r.value}</span>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        {chip && (
+          <div className="mt-2.5 flex justify-end">
+            <span
+              className={cn(
+                "inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+                TONE_CLASSES[chip.tone]
+              )}
+            >
+              {chip.label}
+            </span>
+          </div>
+        )}
+      </div>
+    );
+  }
+);
 ChartTooltipContent.displayName = "ChartTooltipContent";
 
-function ChartTooltip(props: TooltipProps<any, any> & ChartTooltipExtras) {
-  const { labelFormatter, valueFormatter, extraRows, statusChip, ...rest } = props;
-  return (
-    <Tooltip
-      cursor={{
-        stroke: "hsl(var(--primary))",
-        strokeOpacity: 0.35,
-        strokeWidth: 1,
-        strokeDasharray: "3 3"
-      }}
-      content={
-        <ChartTooltipContent
-          labelFormatter={labelFormatter}
-          valueFormatter={valueFormatter}
-          extraRows={extraRows}
-          statusChip={statusChip}
-        />
-      }
-      {...rest}
-    />
-  );
-}
+// Re-export recharts' Tooltip directly so the chart wrappers (LineChart,
+// BarChart, …) recognise it via `displayName === "Tooltip"`. A custom
+// wrapper component breaks that lookup and silently disables the tooltip.
+const ChartTooltip = Tooltip;
 
-export { ChartContainer, ChartTooltip, ChartTooltipContent };
+// Cursor presets — spread at the call site so the chart type drives the
+// hover affordance (dashed line for line charts, soft column for bars).
+const lineChartCursor = {
+  stroke: "hsl(var(--primary))",
+  strokeOpacity: 0.35,
+  strokeWidth: 1,
+  strokeDasharray: "3 3"
+} as const;
+
+const barChartCursor = {
+  fill: "hsl(var(--primary))",
+  fillOpacity: 0.08
+} as const;
+
+export {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  lineChartCursor,
+  barChartCursor
+};
