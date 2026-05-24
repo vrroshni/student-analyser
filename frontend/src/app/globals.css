@@ -34,7 +34,7 @@
   --radius: 0.75rem;
 
   /* Chart palette — vibrant on dark */
-  --chart-1: 204 100% 78%;  /* light sky-blue #8fcdff — percentage */
+  --chart-1: 199 95% 74%;   /* sky-300 #7dd3fc — percentage (light, vivid, distinct from primary) */
   --chart-2: 158 75% 55%;   /* emerald  #36d399 — attendance */
   --chart-3: 42 96% 60%;    /* amber    #fbbf24 — internal */
   --chart-4: 330 80% 70%;   /* pink     #f472b6 — university */

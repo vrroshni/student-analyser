@@ -27,9 +27,11 @@ export type TooltipStatusChip = {
 const ChartContainer = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement> & {
+    // Accepted for API compatibility; chart colors live in :root (--chart-1..4)
+    // and are referenced directly by stroke/fill, so no inline override here.
     config?: ChartConfig;
   }
->(({ className, children, config }, ref) => {
+>(({ className, children }, ref) => {
   return (
     <div
       ref={ref}
@@ -37,16 +39,6 @@ const ChartContainer = React.forwardRef<
         "h-[260px] w-full rounded-lg border border-border/70 bg-background/40 p-3",
         className
       )}
-      style={
-        config
-          ? ({
-              "--chart-1": config[Object.keys(config)[0]]?.color,
-              "--chart-2": config[Object.keys(config)[1]]?.color,
-              "--chart-3": config[Object.keys(config)[2]]?.color,
-              "--chart-4": config[Object.keys(config)[3]]?.color
-            } as React.CSSProperties)
-          : undefined
-      }
     >
       <ResponsiveContainer>{children as any}</ResponsiveContainer>
     </div>
